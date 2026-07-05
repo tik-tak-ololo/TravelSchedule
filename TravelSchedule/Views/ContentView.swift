@@ -23,7 +23,8 @@ struct ContentView: View {
 //            testFetchCopyright()
 //            testFetchAllStations()
 //            testFetchSchedualBetweenStations()
-            testFetchStationSchedule()
+//            testFetchStationSchedule()
+            testFetchCarrierInfo()
         }
     }
     
@@ -197,8 +198,8 @@ struct ContentView: View {
                 
                 // 3. Вызываем метод сервиса
                 print("Fetching schedual between stations...")
-                let schedualBetweenStations = try await service.getSchedualBetweenStations(from: "s9857050",
-                                                                            to: "s9857047"
+                let schedualBetweenStations = try await service.getSchedualBetweenStations(from: "c213",
+                                                                            to: "c11"
                 )
                 
                 // 4. Если всё успешно, печатаем результат в консоль
@@ -247,7 +248,40 @@ struct ContentView: View {
         }
     }
     
-    
+    func testFetchCarrierInfo() {
+        // Создаём Task для выполнения асинхронного кода
+        Task {
+            do {
+                // 1. Создаём экземпляр сгенерированного клиента
+                let client = Client(
+                    // Используем URL сервера, также сгенерированный из openapi.yaml (если он там определён)
+                    serverURL: try Servers.Server1.url(),
+                    // Указываем, какой транспорт использовать для отправки запросов
+                    transport: URLSessionTransport(),
+                    middlewares: [
+                        AuthorizationMiddleware(apiKey: "aa8f79e9-8f33-44fc-a4d8-93c30dfc250e")
+                    ]
+                )
+                
+                // 2. Создаём экземпляр нашего сервиса, передавая ему клиент и API-ключ
+                let service = CarrierService(
+                    client: client
+                )
+                
+                // 3. Вызываем метод сервиса
+                print("Fetching carrier info...")
+                let stationSchedule = try await service.getCarrierInfo(code: "63438")
+                
+                // 4. Если всё успешно, печатаем результат в консоль
+                print("Successfully fetched carrier info: \(stationSchedule)")
+            } catch {
+                // 5. Если произошла ошибка на любом из этапов (создание клиента, вызов сервиса, обработка ответа),
+                //    она будет поймана здесь, и мы выведем её в консоль
+                print("Error fetching carrier info: \(error)")
+                // В реальном приложении здесь должна быть логика обработки ошибок (показ алерта и т. д.)
+            }
+        }
+    }
 }
 
 #Preview {
