@@ -173,7 +173,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Segments'
+                $ref: '#/components/schemas/SegmentsResponse'
   /v3.0/schedule/:
     get:
       tags:
@@ -431,7 +431,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Station'
-    Segments:
+    SegmentsResponse:
       type: object
       properties:
         pagination:

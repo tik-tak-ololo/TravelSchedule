@@ -21,7 +21,8 @@ struct ContentView: View {
 //            testFetchStations()
 //            testFetchCity()
 //            testFetchCopyright()
-            testFetchAllStations()
+            //testFetchAllStations()
+            testFetchSchedualBetweenStations()
         }
     }
     
@@ -154,7 +155,7 @@ struct ContentView: View {
                 )
                 
                 // 2. Создаём экземпляр нашего сервиса, передавая ему клиент и API-ключ
-                let service = StationsListService(
+                let service = AllStationsService(
                     client: client
                 )
                 
@@ -168,6 +169,43 @@ struct ContentView: View {
                 // 5. Если произошла ошибка на любом из этапов (создание клиента, вызов сервиса, обработка ответа),
                 //    она будет поймана здесь, и мы выведем её в консоль
                 print("Error fetching all stations: \(error)")
+                // В реальном приложении здесь должна быть логика обработки ошибок (показ алерта и т. д.)
+            }
+        }
+    }
+    
+    func testFetchSchedualBetweenStations() {
+        // Создаём Task для выполнения асинхронного кода
+        Task {
+            do {
+                // 1. Создаём экземпляр сгенерированного клиента
+                let client = Client(
+                    // Используем URL сервера, также сгенерированный из openapi.yaml (если он там определён)
+                    serverURL: try Servers.Server1.url(),
+                    // Указываем, какой транспорт использовать для отправки запросов
+                    transport: URLSessionTransport(),
+                    middlewares: [
+                        AuthorizationMiddleware(apiKey: "aa8f79e9-8f33-44fc-a4d8-93c30dfc250e")
+                    ]
+                )
+                
+                // 2. Создаём экземпляр нашего сервиса, передавая ему клиент и API-ключ
+                let service = SegmentsService(
+                    client: client
+                )
+                
+                // 3. Вызываем метод сервиса
+                print("Fetching stations...")
+                let stations = try await service.getSchedualBetweenStations(from: "s9600213",
+                                                                            to: "c146"
+                )
+                
+                // 4. Если всё успешно, печатаем результат в консоль
+                print("Successfully fetched stations: \(stations)")
+            } catch {
+                // 5. Если произошла ошибка на любом из этапов (создание клиента, вызов сервиса, обработка ответа),
+                //    она будет поймана здесь, и мы выведем её в консоль
+                print("Error fetching stations: \(error)")
                 // В реальном приложении здесь должна быть логика обработки ошибок (показ алерта и т. д.)
             }
         }

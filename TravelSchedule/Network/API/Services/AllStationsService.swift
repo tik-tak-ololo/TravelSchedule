@@ -11,11 +11,11 @@ import Foundation
 
 typealias AllStationsResponse = Components.Schemas.AllStationsResponse
 
-protocol StationsListServiceProtocol {
+protocol AllStationsServiceProtocol {
   func getAllStations() async throws -> AllStationsResponse
 }
 
-final class StationsListService: StationsListServiceProtocol {
+final class AllStationsService: AllStationsServiceProtocol {
     private let client: Client
   
     init(client: Client) {
