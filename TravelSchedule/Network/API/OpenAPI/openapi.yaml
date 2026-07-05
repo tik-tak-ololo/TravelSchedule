@@ -16,12 +16,6 @@ paths:
       summary: Список ближайших станций
       operationId: getNearestStations
       parameters:
-      - name: apikey
-        in: query
-        description: API key
-        required: true
-        schema:
-          type: string
       - name: lat
         in: query
         description: широта
@@ -60,6 +54,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/Stations'
 components:
+  securitySchemes:
+    AuthorizationHeader:
+      type: apiKey
+      in: header
+      name: Authorization
   schemas:
     Stations:
       type: object
@@ -115,3 +114,5 @@ components:
           type: string
         touch_url:
           type: string
+security:
+  - AuthorizationHeader: []

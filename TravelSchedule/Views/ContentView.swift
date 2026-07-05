@@ -32,13 +32,15 @@ struct ContentView: View {
                     // Используем URL сервера, также сгенерированный из openapi.yaml (если он там определён)
                     serverURL: try Servers.Server1.url(),
                     // Указываем, какой транспорт использовать для отправки запросов
-                    transport: URLSessionTransport()
+                    transport: URLSessionTransport(),
+                    middlewares: [
+                        AuthorizationMiddleware(apiKey: "aa8f79e9-8f33-44fc-a4d8-93c30dfc250e")
+                    ]
                 )
                 
                 // 2. Создаём экземпляр нашего сервиса, передавая ему клиент и API-ключ
                 let service = NearestStationsService(
-                    client: client,
-                    apikey: "aa8f79e9-8f33-44fc-a4d8-93c30dfc250e"
+                    client: client
                 )
                 
                 // 3. Вызываем метод сервиса
