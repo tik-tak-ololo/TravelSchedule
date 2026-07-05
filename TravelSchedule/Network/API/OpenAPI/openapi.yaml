@@ -9,6 +9,29 @@ tags:
 - name: Список ближайших станций
   description: Список ближайших станций
 paths:
+  /v3.0/copyright/:
+    get:
+      operationId: getCopyright
+      summary: Копирайт Яндекс Расписаний
+      description: Возвращает баннеры, URL сервиса и уведомительный текст Яндекс Расписаний.
+      parameters:
+        - name: format
+          in: query
+          required: false
+          description: Формат ответа.
+          schema:
+            type: string
+            enum:
+              - json
+              - xml
+            default: json
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CopyrightResponse"
   /v3.0/nearest_stations/:
     get:
       tags:
@@ -392,6 +415,13 @@ components:
       in: header
       name: Authorization
   schemas:
+    CopyrightResponse:
+      type: object
+      required:
+        - copyright
+      properties:
+        copyright:
+          $ref: "#/components/schemas/Copyright"
     StationsResponse:
       type: object
       properties:
@@ -466,6 +496,42 @@ components:
         duration:
           type: integer
           description: Длительность рейса в секундах
+    Copyright:
+      type: object
+      required:
+        - logo_vm
+        - url
+        - logo_vd
+        - logo_hy
+        - logo_hd
+        - logo_vy
+        - logo_hm
+        - text
+      properties:
+        logo_vm:
+          type: string
+          description: Вертикальный монохромный баннер.
+        url:
+          type: string
+          description: URL Яндекс Расписаний.
+        logo_vd:
+          type: string
+          description: Вертикальный черно-белый баннер.
+        logo_hy:
+          type: string
+          description: Горизонтальный цветной баннер.
+        logo_hd:
+          type: string
+          description: Горизонтальный черно-белый баннер.
+        logo_vy:
+          type: string
+          description: Вертикальный цветной баннер.
+        logo_hm:
+          type: string
+          description: Горизонтальный монохромный баннер.
+        text:
+          type: string
+          description: Уведомительный текст.
     Pagination:
       type: object
       properties:

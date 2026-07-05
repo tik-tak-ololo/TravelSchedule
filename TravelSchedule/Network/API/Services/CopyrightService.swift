@@ -1,5 +1,5 @@
 //
-//  NearestCityService.swift
+//  CopyrightService.swift
 //  TravelSchedule
 //
 //  Created by Сергей Хмелёв on 05.07.2026.
@@ -13,16 +13,16 @@ import OpenAPIURLSession
 // Создаём псевдоним (typealias) для сгенерированного типа Stations.
 // Полное имя Components.Schemas.Stations соответствует пути в openapi.yaml:
 // components → schemas → Stations
-typealias NearestCity = Components.Schemas.NearestCityResponse
+typealias Copyright = Components.Schemas.CopyrightResponse
 
 // Определяем протокол для нашего сервиса (хорошая практика для тестирования и гибкости)
-protocol NearestCityServiceProtocol {
-  // Функция для получения города, асинхронная и может выбросить ошибку
-  func getNearestCity(lat: Double, lng: Double, distance: Int) async throws -> NearestCity
+protocol CopyrightServiceProtocol {
+  // Функция для получения копирайта, асинхронная и может выбросить ошибку
+  func getCopyright() async throws -> Copyright
 }
 
 // Конкретная реализация сервиса
-final class NearestCityService: NearestCityServiceProtocol {
+final class CopyrightService: CopyrightServiceProtocol {
   // Хранит экземпляр сгенерированного клиента
   private let client: Client
   
@@ -30,15 +30,16 @@ final class NearestCityService: NearestCityServiceProtocol {
     self.client = client
   }
   
-  func getNearestCity(lat: Double, lng: Double, distance: Int) async throws -> NearestCity {
+  func getCopyright() async throws -> Copyright {
     // Вызываем функцию getNearestStations на ЭКЗЕМПЛЯРЕ сгенерированного клиента.
     // Имя функции и параметры 'query' напрямую соответствуют операции
     // 'getNearestStations' и её параметрам в openapi.yaml
-    let response = try await client.getNearestCity(query: .init(
-        lat: lat,           // Передаём широту
-        lng: lng,           // Передаём долготу
-        distance: distance  // Передаём дистанцию
-    ))
+      let response = try await client.getCopyright(
+          query: .init(
+            format: .json
+          )
+
+      )
     // response.ok: Доступ к успешному ответу
     // .body: Получаем тело ответа
     // .json: Получаем объект из JSON в ожидаемом типе NearestStations
