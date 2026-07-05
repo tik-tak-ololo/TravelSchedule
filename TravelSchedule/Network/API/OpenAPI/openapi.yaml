@@ -873,11 +873,11 @@ components:
           description: Тип транспортного пункта (settlement или station)
     CarrierResponse:
       type: object
+      required:
+        - carrier
       properties:
-        carriers:
-          type: array
-          items:
-            $ref: '#/components/schemas/Carrier'
+        carrier:
+          $ref: '#/components/schemas/Carrier'
     AllStationsResponse:
       type: object
       properties:

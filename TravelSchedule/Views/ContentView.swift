@@ -18,13 +18,13 @@ struct ContentView: View {
         }
         .padding()
         .onAppear {
-//            testFetchStations()
-//            testFetchCity()
-//            testFetchCopyright()
-//            testFetchAllStations()
-//            testFetchSchedualBetweenStations()
-//            testFetchStationSchedule()
-//            testFetchCarrierInfo()
+            testFetchStations()
+            testFetchCity()
+            testFetchCopyright()
+            testFetchAllStations()
+            testFetchSchedualBetweenStations()
+            testFetchStationSchedule()
+            testFetchCarrierInfo()
             testFetchRouteStations()
         }
     }
@@ -200,7 +200,7 @@ struct ContentView: View {
                 // 3. Вызываем метод сервиса
                 print("Fetching schedual between stations...")
                 let schedualBetweenStations = try await service.getSchedualBetweenStations(from: "c213",
-                                                                            to: "c11"
+                                                                            to: "c2"
                 )
                 
                 // 4. Если всё успешно, печатаем результат в консоль
@@ -271,7 +271,7 @@ struct ContentView: View {
                 
                 // 3. Вызываем метод сервиса
                 print("Fetching carrier info...")
-                let stationSchedule = try await service.getCarrierInfo(code: "63438")
+                let stationSchedule = try await service.getCarrierInfo(code: "4240")
                 
                 // 4. Если всё успешно, печатаем результат в консоль
                 print("Successfully fetched carrier info: \(stationSchedule)")
