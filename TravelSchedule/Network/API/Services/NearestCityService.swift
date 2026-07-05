@@ -1,8 +1,8 @@
 //
-//  NearestStationsService.swift
+//  NearestCityService.swift
 //  TravelSchedule
 //
-//  Created by Сергей Хмелёв on 04.07.2026.
+//  Created by Сергей Хмелёв on 05.07.2026.
 //
 
 // 1. Импортируем библиотеки:
@@ -13,16 +13,16 @@ import OpenAPIURLSession
 // Создаём псевдоним (typealias) для сгенерированного типа Stations.
 // Полное имя Components.Schemas.Stations соответствует пути в openapi.yaml:
 // components → schemas → Stations
-typealias NearestStations = Components.Schemas.StationsResponse
+typealias NearestCity = Components.Schemas.NearestCityResponse
 
 // Определяем протокол для нашего сервиса (хорошая практика для тестирования и гибкости)
-protocol NearestStationsServiceProtocol {
+protocol NearestCityProtocol {
   // Функция для получения станций, асинхронная и может выбросить ошибку
-  func getNearestStations(lat: Double, lng: Double, distance: Int) async throws -> NearestStations
+  func getNearestCity(lat: Double, lng: Double, distance: Int) async throws -> NearestCity
 }
 
 // Конкретная реализация сервиса
-final class NearestStationsService: NearestStationsServiceProtocol {
+final class NearestCityService: NearestCityProtocol {
   // Хранит экземпляр сгенерированного клиента
   private let client: Client
   
@@ -30,11 +30,11 @@ final class NearestStationsService: NearestStationsServiceProtocol {
     self.client = client
   }
   
-  func getNearestStations(lat: Double, lng: Double, distance: Int) async throws -> NearestStations {
+  func getNearestCity(lat: Double, lng: Double, distance: Int) async throws -> NearestCity {
     // Вызываем функцию getNearestStations на ЭКЗЕМПЛЯРЕ сгенерированного клиента.
     // Имя функции и параметры 'query' напрямую соответствуют операции
     // 'getNearestStations' и её параметрам в openapi.yaml
-    let response = try await client.getNearestStations(query: .init(
+    let response = try await client.getNearestCity(query: .init(
         lat: lat,           // Передаём широту
         lng: lng,           // Передаём долготу
         distance: distance  // Передаём дистанцию
