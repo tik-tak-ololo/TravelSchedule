@@ -11,7 +11,7 @@ import OpenAPIURLSession
 typealias SegmentsResponse = Components.Schemas.SegmentsResponse
 
 protocol SegmentsServiceProtocol {
-    func getSchedualBetweenStations(from: String, to: String) async throws -> SegmentsResponse
+    func getScheduleBetweenStations(from: String, to: String) async throws -> SegmentsResponse
 }
 
 final class SegmentsService: SegmentsServiceProtocol {
@@ -21,7 +21,7 @@ final class SegmentsService: SegmentsServiceProtocol {
         self.client = client
     }
   
-    func getSchedualBetweenStations(from: String, to: String) async throws -> SegmentsResponse {
+    func getScheduleBetweenStations(from: String, to: String) async throws -> SegmentsResponse {
         let response = try await client.getSchedualBetweenStations(query: .init(
             from: from,
             to: to

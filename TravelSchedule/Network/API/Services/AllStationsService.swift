@@ -1,5 +1,5 @@
 //
-//  StationsListService.swift
+//  AllStationsService.swift
 //  TravelSchedule
 //
 //  Created by Сергей Хмелёв on 05.07.2026.

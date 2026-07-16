@@ -22,7 +22,7 @@ struct ContentView: View {
             testFetchCity()
             testFetchCopyright()
             testFetchAllStations()
-            testFetchSchedualBetweenStations()
+            testFetchScheduleBetweenStations()
             testFetchStationSchedule()
             testFetchCarrierInfo()
             testFetchRouteStations()
@@ -177,7 +177,7 @@ struct ContentView: View {
         }
     }
     
-    func testFetchSchedualBetweenStations() {
+    func testFetchScheduleBetweenStations() {
         // Создаём Task для выполнения асинхронного кода
         Task {
             do {
@@ -198,17 +198,17 @@ struct ContentView: View {
                 )
                 
                 // 3. Вызываем метод сервиса
-                print("Fetching schedual between stations...")
-                let schedualBetweenStations = try await service.getSchedualBetweenStations(from: "c213",
+                print("Fetching schedule between stations...")
+                let scheduleBetweenStations = try await service.getScheduleBetweenStations(from: "c213",
                                                                             to: "c2"
                 )
                 
                 // 4. Если всё успешно, печатаем результат в консоль
-                print("Successfully fetched schedual between stations: \(schedualBetweenStations)")
+                print("Successfully fetched schedule between stations: \(scheduleBetweenStations)")
             } catch {
                 // 5. Если произошла ошибка на любом из этапов (создание клиента, вызов сервиса, обработка ответа),
                 //    она будет поймана здесь, и мы выведем её в консоль
-                print("Error fetching schedual between stations: \(error)")
+                print("Error fetching schedule between stations: \(error)")
                 // В реальном приложении здесь должна быть логика обработки ошибок (показ алерта и т. д.)
             }
         }
