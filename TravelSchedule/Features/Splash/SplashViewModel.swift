@@ -14,38 +14,25 @@ final class SplashViewModel: ObservableObject {
     @Published private(set) var isFinished = false
 
     private let displayDuration: Duration
-    private var splashTask: Task<Void, Never>?
 
     init(displayDuration: Duration = .seconds(2)) {
         self.displayDuration = displayDuration
     }
 
-    func start() {
-        guard splashTask == nil else {
-            return
-        }
-
-        splashTask = Task { [weak self] in
-            guard let self else {
-                return
-            }
-
-            try? await Task.sleep(for: displayDuration)
+    func start() async {
+        do {
+            try await Task.sleep(for: displayDuration)
 
             guard !Task.isCancelled else {
                 return
             }
 
             isFinished = true
+        } catch is CancellationError {
+            // Splash Screen был закрыт раньше окончания задержки.
+            // Это ожидаемое поведение, дополнительных действий не требуется.
+        } catch {
+            assertionFailure("Unexpected error: \(error)")
         }
-    }
-
-    func cancel() {
-        splashTask?.cancel()
-        splashTask = nil
-    }
-
-    deinit {
-        splashTask?.cancel()
     }
 }

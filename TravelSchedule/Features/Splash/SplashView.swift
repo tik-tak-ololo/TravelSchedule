@@ -11,7 +11,8 @@ struct SplashView: View {
 
     let onFinished: () -> Void
 
-    @StateObject private var viewModel: SplashViewModel = SplashViewModel()
+    @StateObject
+    private var viewModel = SplashViewModel()
 
     var body: some View {
         GeometryReader { proxy in
@@ -26,10 +27,7 @@ struct SplashView: View {
         }
         .ignoresSafeArea()
         .task {
-            viewModel.start()
-        }
-        .onDisappear {
-            viewModel.cancel()
+            await viewModel.start()
         }
         .onChange(of: viewModel.isFinished) { _, isFinished in
             guard isFinished else {
