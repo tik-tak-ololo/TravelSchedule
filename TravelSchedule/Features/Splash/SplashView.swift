@@ -16,7 +16,7 @@ struct SplashView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            Image("SplashScreen")
+            Image(.splashScreen)
                 .resizable()
                 .scaledToFill()
                 .frame(

@@ -41,6 +41,7 @@ struct HomeView: View {
                 }
             }
         }
+        .background(.backgroundColorIOS)
     }
 
     private var routeSelectionView: some View {
@@ -87,8 +88,8 @@ struct HomeView: View {
                     .font(.system(size: 17))
                     .foregroundStyle(
                         title == nil
-                            ? Color.secondary
-                            : Color.primary
+                            ? .textFieldPlaceHolderColorIOS
+                            : .textFieldColorIOS
                     )
                     .lineLimit(1)
                     .truncationMode(.tail)
@@ -106,7 +107,7 @@ struct HomeView: View {
         Button {
             viewModel.swapRoutePoints()
         } label: {
-            Image(systemName: "arrow.up.arrow.down")
+            Image(.swapButton)
                 .font(.system(size: 17, weight: .medium))
                 .foregroundStyle(.travelBlue)
                 .frame(width: 36, height: 36)
