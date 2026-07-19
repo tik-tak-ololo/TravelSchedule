@@ -21,7 +21,7 @@ struct AppRootView: View {
                 .transition(.opacity)
 
             case .main:
-                ContentView()
+                MainTabView()
                     .transition(.opacity)
             }
         }
