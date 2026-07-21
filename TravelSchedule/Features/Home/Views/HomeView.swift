@@ -5,13 +5,21 @@
 //  Created by Сергей Хмелёв on 19.07.2026.
 //
 
+//
+//  HomeView.swift
+//  TravelSchedule
+//
+//  Created by Сергей Хмелёв on 19.07.2026.
+//
+
 import SwiftUI
 
 @MainActor
 struct HomeView: View {
 
     @StateObject private var viewModel = HomeViewModel()
-    @State private var selectionType: RoutePointType?
+
+    @State private var route: HomeRoute?
 
     var body: some View {
         NavigationStack {
@@ -28,21 +36,56 @@ struct HomeView: View {
 
                 Spacer()
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.horizontal, 16)
             .padding(.top, 24)
+            .background(.backgroundColorIOS)
             .animation(
                 .easeInOut(duration: 0.2),
                 value: viewModel.isSearchButtonVisible
             )
-            .navigationDestination(item: $selectionType) { type in
-                RoutePointSelectionView(type: type) { routePoint in
-                    viewModel.select(routePoint, for: type)
-                    selectionType = nil
-                }
+            .navigationDestination(item: $route) { route in
+                destination(for: route)
             }
         }
-        .background(.backgroundColorIOS)
     }
+
+    // MARK: - Navigation
+
+    @ViewBuilder
+    private func destination(for route: HomeRoute) -> some View {
+        switch route {
+        case let .citySelection(type):
+            CitySelectionView { city in
+                handleCitySelection(
+                    city,
+                    for: type
+                )
+            }
+        }
+    }
+
+    private func handleCitySelection(
+        _ city: City,
+        for type: RoutePointType
+    ) {
+        /*
+         Позже здесь будет переход на StationSelectionView.
+
+         Например:
+
+         selectedCity = city
+
+         После реализации экрана станций лучше перенести
+         переход CitySelectionView -> StationSelectionView
+         внутрь CitySelectionView.
+         */
+
+        print("Выбран город: \(city.name)")
+        print("Тип точки маршрута: \(type)")
+    }
+
+    // MARK: - Route selection
 
     private var routeSelectionView: some View {
         HStack(spacing: 16) {
@@ -51,14 +94,14 @@ struct HomeView: View {
                     title: viewModel.departure?.title,
                     placeholder: "Откуда"
                 ) {
-                    selectionType = .departure
+                    route = .citySelection(.departure)
                 }
 
                 routePointButton(
                     title: viewModel.destination?.title,
                     placeholder: "Куда"
                 ) {
-                    selectionType = .destination
+                    route = .citySelection(.destination)
                 }
             }
             .padding(.horizontal, 16)
@@ -103,6 +146,8 @@ struct HomeView: View {
         .buttonStyle(.plain)
     }
 
+    // MARK: - Swap button
+
     private var swapButton: some View {
         Button {
             viewModel.swapRoutePoints()
@@ -119,6 +164,8 @@ struct HomeView: View {
         .buttonStyle(.plain)
         .accessibilityLabel("Поменять местами пункты маршрута")
     }
+
+    // MARK: - Search button
 
     private var searchButton: some View {
         Button {
