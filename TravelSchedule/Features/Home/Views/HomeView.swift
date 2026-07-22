@@ -5,13 +5,6 @@
 //  Created by Сергей Хмелёв on 19.07.2026.
 //
 
-//
-//  HomeView.swift
-//  TravelSchedule
-//
-//  Created by Сергей Хмелёв on 19.07.2026.
-//
-
 import SwiftUI
 
 @MainActor
@@ -19,10 +12,10 @@ struct HomeView: View {
 
     @StateObject private var viewModel = HomeViewModel()
 
-    @State private var route: HomeRoute?
+    @State private var navigationPath = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             VStack(spacing: 16) {
                 routeSelectionView
 
@@ -44,7 +37,7 @@ struct HomeView: View {
                 .easeInOut(duration: 0.2),
                 value: viewModel.isSearchButtonVisible
             )
-            .navigationDestination(item: $route) { route in
+            .navigationDestination(for: HomeRoute.self) { route in
                 destination(for: route)
             }
         }
@@ -57,32 +50,27 @@ struct HomeView: View {
         switch route {
         case let .citySelection(type):
             CitySelectionView { city in
-                handleCitySelection(
-                    city,
+                navigationPath.append(
+                    HomeRoute.stationSelection(
+                        city: city,
+                        type: type
+                    )
+                )
+            }
+
+        case let .stationSelection(city, type):
+            StationSelectionView(city: city) { station in
+                viewModel.selectStation(
+                    station,
+                    in: city,
                     for: type
+                )
+
+                navigationPath.removeLast(
+                    navigationPath.count
                 )
             }
         }
-    }
-
-    private func handleCitySelection(
-        _ city: City,
-        for type: RoutePointType
-    ) {
-        /*
-         Позже здесь будет переход на StationSelectionView.
-
-         Например:
-
-         selectedCity = city
-
-         После реализации экрана станций лучше перенести
-         переход CitySelectionView -> StationSelectionView
-         внутрь CitySelectionView.
-         */
-
-        print("Выбран город: \(city.name)")
-        print("Тип точки маршрута: \(type)")
     }
 
     // MARK: - Route selection
@@ -94,14 +82,18 @@ struct HomeView: View {
                     title: viewModel.departure?.title,
                     placeholder: "Откуда"
                 ) {
-                    route = .citySelection(.departure)
+                    navigationPath.append(
+                        HomeRoute.citySelection(.departure)
+                    )
                 }
 
                 routePointButton(
                     title: viewModel.destination?.title,
                     placeholder: "Куда"
                 ) {
-                    route = .citySelection(.destination)
+                    navigationPath.append(
+                        HomeRoute.citySelection(.destination)
+                    )
                 }
             }
             .padding(.horizontal, 16)

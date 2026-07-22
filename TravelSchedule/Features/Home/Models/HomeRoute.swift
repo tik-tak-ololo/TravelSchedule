@@ -9,4 +9,8 @@ import Foundation
 
 enum HomeRoute: Hashable {
     case citySelection(RoutePointType)
+    case stationSelection(
+        city: City,
+        type: RoutePointType
+    )
 }

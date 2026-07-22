@@ -7,12 +7,12 @@
 
 import Foundation
 
-struct RoutePoint: Equatable, Hashable {
+struct RoutePoint: Hashable {
 
-    let city: String
-    let station: String
+    let city: City
+    let station: Station
 
     var title: String {
-        "\(city) (\(station))"
+        "\(city.name) (\(station.name))"
     }
 }

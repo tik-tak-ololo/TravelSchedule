@@ -50,4 +50,23 @@ final class HomeViewModel: ObservableObject {
         print("Откуда: \(departure.title)")
         print("Куда: \(destination.title)")
     }
+    
+    func selectStation(
+        _ station: Station,
+        in city: City,
+        for type: RoutePointType
+    ) {
+        let routePoint = RoutePoint(
+            city: city,
+            station: station
+        )
+
+        switch type {
+        case .departure:
+            departure = routePoint
+
+        case .destination:
+            destination = routePoint
+        }
+    }
 }
