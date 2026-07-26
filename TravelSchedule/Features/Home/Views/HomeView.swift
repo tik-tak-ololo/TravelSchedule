@@ -70,6 +70,15 @@ struct HomeView: View {
                     navigationPath.count
                 )
             }
+
+        case let .schedule(
+            departureTitle,
+            destinationTitle
+        ):
+            ScheduleView(
+                departureTitle: departureTitle,
+                destinationTitle: destinationTitle
+            )
         }
     }
 
@@ -161,7 +170,19 @@ struct HomeView: View {
 
     private var searchButton: some View {
         Button {
-            viewModel.search()
+            guard
+                let departure = viewModel.departure,
+                let destination = viewModel.destination
+            else {
+                return
+            }
+
+            navigationPath.append(
+                HomeRoute.schedule(
+                    departureTitle: departure.title,
+                    destinationTitle: destination.title
+                )
+            )
         } label: {
             Text("Найти")
                 .font(.system(size: 17, weight: .semibold))

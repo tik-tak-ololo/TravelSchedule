@@ -13,4 +13,8 @@ enum HomeRoute: Hashable {
         city: City,
         type: RoutePointType
     )
+    case schedule(
+        departureTitle: String,
+        destinationTitle: String
+    )
 }
