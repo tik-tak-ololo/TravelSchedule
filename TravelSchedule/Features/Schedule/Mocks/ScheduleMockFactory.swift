@@ -15,21 +15,21 @@ enum ScheduleMockFactory {
     ) -> [ScheduleItem] {
         let rzd = Carrier(
             title: "РЖД",
-            logoAssetName: "carrierRZD",
+            logoAssetName: "CarrierRZD",
             email: "info@rzd.ru",
             phone: "+7 (800) 775-00-00"
         )
 
         let fgk = Carrier(
             title: "ФГК",
-            logoAssetName: "carrierFGK",
+            logoAssetName: "CarrierFGK",
             email: "info@railfgk.ru",
             phone: "+7 (495) 988-20-00"
         )
 
         let uralLogistics = Carrier(
             title: "Урал логистика",
-            logoAssetName: "carrierUralLogistics",
+            logoAssetName: "CarrierUralLogistics",
             email: "info@ural-logistics.ru",
             phone: "+7 (343) 000-00-00"
         )
