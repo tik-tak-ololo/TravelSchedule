@@ -12,7 +12,7 @@ import Combine
 final class ScheduleViewModel: ObservableObject {
 
     @Published private(set) var scheduleItems: [ScheduleItem]
-    @Published var filter = ScheduleFilter()
+    @Published private(set) var filter = ScheduleFilter()
 
     let departureTitle: String
     let destinationTitle: String
@@ -33,7 +33,7 @@ final class ScheduleViewModel: ObservableObject {
 
     var filteredScheduleItems: [ScheduleItem] {
         scheduleItems
-            .filter(matchesTransferFilter)
+            .filter(matchesTransfersFilter)
             .filter(matchesDepartureTimeFilter)
             .sorted {
                 $0.departureDate < $1.departureDate
@@ -44,23 +44,28 @@ final class ScheduleViewModel: ObservableObject {
         !filter.isEmpty
     }
 
-    func applyFilter(_ filter: ScheduleFilter) {
+    func applyFilter(
+        _ filter: ScheduleFilter
+    ) {
         self.filter = filter
     }
 
-    private func matchesTransferFilter(
+    private func matchesTransfersFilter(
         _ item: ScheduleItem
     ) -> Bool {
-        guard let transferOption = filter.transferOption else {
+        guard let transfersOption = filter.transfersOption else {
             return true
         }
 
-        switch transferOption {
-        case .direct:
-            return !item.hasTransfers
+        switch transfersOption {
+        case .show:
+            // Показываем как прямые рейсы,
+            // так и рейсы с пересадками.
+            return true
 
-        case .withTransfers:
-            return item.hasTransfers
+        case .hide:
+            // Оставляем только прямые рейсы.
+            return !item.hasTransfers
         }
     }
 

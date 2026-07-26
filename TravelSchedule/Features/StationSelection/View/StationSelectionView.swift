@@ -63,6 +63,7 @@ struct StationSelectionView: View {
             content
         }
         .background(.backgroundColorIOS)
+        .toolbar(.hidden, for: .tabBar)
         .navigationBarBackButtonHidden()
         .toolbar(.hidden, for: .navigationBar)
         .contentShape(Rectangle())

@@ -79,6 +79,7 @@ struct CitySelectionView: View {
             }
         }
         .frame(height: 56)
+        .toolbar(.hidden, for: .tabBar)
     }
 
     @ViewBuilder
