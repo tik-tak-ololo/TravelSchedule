@@ -13,6 +13,8 @@ struct ScheduleView: View {
     @StateObject private var viewModel: ScheduleViewModel
 
     @State private var isFilterPresented = false
+    @State private var isCarrierDetailsPresented = false
+    @State private var selectedItem: ScheduleItem?
 
     init(
         departureTitle: String,
@@ -43,6 +45,11 @@ struct ScheduleView: View {
                 viewModel.applyFilter(filter)
             }
         }
+        .navigationDestination(
+            isPresented: $isCarrierDetailsPresented
+        ) {
+            CarrierDetailsView()
+        }
     }
 
     private var scheduleList: some View {
@@ -66,11 +73,8 @@ struct ScheduleView: View {
     private var scheduleCards: some View {
         ForEach(viewModel.filteredScheduleItems) { item in
             Button {
-                // TODO: Открыть CarrierDetailsView
-                // после реализации экрана.
-                print(
-                    "Выбран рейс перевозчика: \(item.carrier.title)"
-                )
+                selectedItem = item
+                isCarrierDetailsPresented = true
             } label: {
                 ScheduleCardView(item: item)
             }
