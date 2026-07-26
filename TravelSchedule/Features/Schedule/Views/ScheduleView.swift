@@ -56,6 +56,7 @@ struct ScheduleView: View {
             .padding(.bottom, 92)
         }
         .scrollIndicators(.hidden)
+        .toolbar(.hidden, for: .tabBar)
     }
 
     private var routeTitle: some View {
