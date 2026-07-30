@@ -9,7 +9,7 @@ import SwiftUI
 
 struct AppRootView: View {
 
-    @StateObject private var viewModel = AppViewModel()
+    @State private var viewModel = AppViewModel()
 
     var body: some View {
         ZStack {

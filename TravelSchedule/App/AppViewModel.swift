@@ -6,12 +6,13 @@
 //
 
 import Foundation
-import Combine
+import Observation
 
 @MainActor
-final class AppViewModel: ObservableObject {
+@Observable
+final class AppViewModel {
 
-    @Published private(set) var screen: AppScreen = .splash
+    private(set) var screen: AppScreen = .splash
 
     func showMainScreen() {
         screen = .main
