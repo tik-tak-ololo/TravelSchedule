@@ -12,7 +12,7 @@ struct ScheduleFilterView: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @StateObject private var viewModel: ScheduleFilterViewModel
+    @State private var viewModel: ScheduleFilterViewModel
 
     private let onApply: (ScheduleFilter) -> Void
 
@@ -20,8 +20,8 @@ struct ScheduleFilterView: View {
         filter: ScheduleFilter,
         onApply: @escaping (ScheduleFilter) -> Void
     ) {
-        _viewModel = StateObject(
-            wrappedValue: ScheduleFilterViewModel(
+        _viewModel = State(
+            initialValue: ScheduleFilterViewModel(
                 filter: filter
             )
         )

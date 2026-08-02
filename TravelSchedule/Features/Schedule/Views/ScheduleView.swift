@@ -10,7 +10,7 @@ import SwiftUI
 @MainActor
 struct ScheduleView: View {
 
-    @StateObject private var viewModel: ScheduleViewModel
+    @State private var viewModel: ScheduleViewModel
 
     @State private var isFilterPresented = false
     @State private var selectedItem: ScheduleItem?
@@ -19,8 +19,8 @@ struct ScheduleView: View {
         departureTitle: String,
         destinationTitle: String
     ) {
-        _viewModel = StateObject(
-            wrappedValue: ScheduleViewModel(
+        _viewModel = State(
+            initialValue: ScheduleViewModel(
                 departureTitle: departureTitle,
                 destinationTitle: destinationTitle
             )

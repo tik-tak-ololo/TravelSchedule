@@ -6,13 +6,14 @@
 //
 
 import Foundation
-import Combine
+import Observation
 
 @MainActor
-final class ScheduleViewModel: ObservableObject {
+@Observable
+final class ScheduleViewModel {
 
-    @Published private(set) var scheduleItems: [ScheduleItem]
-    @Published private(set) var filter = ScheduleFilter()
+    private(set) var scheduleItems: [ScheduleItem]
+    private(set) var filter = ScheduleFilter()
 
     let departureTitle: String
     let destinationTitle: String

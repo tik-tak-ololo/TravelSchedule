@@ -6,12 +6,13 @@
 //
 
 import Foundation
-import Combine
+import Observation
 
 @MainActor
-final class ErrorViewModel: ObservableObject {
+@Observable
+final class ErrorViewModel {
 
-    @Published private(set) var errorType: ErrorScreenType
+    private(set) var errorType: ErrorScreenType
 
     init(errorType: ErrorScreenType) {
         self.errorType = errorType

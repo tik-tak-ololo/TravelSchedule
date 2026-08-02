@@ -10,7 +10,7 @@ import SwiftUI
 @MainActor
 struct CitySelectionView: View {
 
-    @StateObject private var viewModel: CitySelectionViewModel
+    @State private var viewModel: CitySelectionViewModel
     @FocusState private var isSearchFocused: Bool
 
     @Environment(\.dismiss) private var dismiss
@@ -21,20 +21,22 @@ struct CitySelectionView: View {
         viewModel: CitySelectionViewModel,
         onCitySelected: @escaping (City) -> Void
     ) {
-        _viewModel = StateObject(wrappedValue: viewModel)
+        _viewModel = State(initialValue: viewModel)
         self.onCitySelected = onCitySelected
     }
 
     init(
         onCitySelected: @escaping (City) -> Void
     ) {
-        _viewModel = StateObject(
-            wrappedValue: CitySelectionViewModel()
+        _viewModel = State(
+            initialValue: CitySelectionViewModel()
         )
         self.onCitySelected = onCitySelected
     }
 
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         VStack(spacing: 0) {
             navigationBar
 

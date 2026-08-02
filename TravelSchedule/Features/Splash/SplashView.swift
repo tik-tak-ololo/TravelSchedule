@@ -11,7 +11,7 @@ struct SplashView: View {
 
     let onFinished: () -> Void
 
-    @StateObject
+    @State
     private var viewModel = SplashViewModel()
 
     var body: some View {
