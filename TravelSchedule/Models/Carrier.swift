@@ -35,3 +35,20 @@ struct Carrier: Identifiable, Hashable {
         self.phone = phone
     }
 }
+
+extension Carrier {
+
+    var phoneURL: URL? {
+        guard let phone else { return nil }
+
+        let allowedCharacters = CharacterSet(charactersIn: "+0123456789")
+        let number = phone.unicodeScalars
+            .filter { allowedCharacters.contains($0) }
+            .map(String.init)
+            .joined()
+
+        guard !number.isEmpty else { return nil }
+
+        return URL(string: "tel:\(number)")
+    }
+}

@@ -67,7 +67,7 @@ struct CarrierDetailsView: View {
             }
 
             if let phone = carrier.phone,
-               let phoneURL = phoneURL(for: phone) {
+               let phoneURL = carrier.phoneURL {
                 contactRow(
                     title: "Телефон",
                     value: phone,
@@ -91,16 +91,6 @@ struct CarrierDetailsView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(.travelBlue)
         }
-    }
-
-    private func phoneURL(for phone: String) -> URL? {
-        let allowedCharacters = CharacterSet(charactersIn: "+0123456789")
-        let number = phone.unicodeScalars
-            .filter { allowedCharacters.contains($0) }
-            .map(String.init)
-            .joined()
-
-        return URL(string: "tel:\(number)")
     }
 }
 
