@@ -17,7 +17,11 @@ struct HomeView: View {
     var body: some View {
         NavigationStack(path: $navigationPath) {
             VStack(spacing: 16) {
+                StoriesCollectionView(stories: viewModel.stories)
+                    .padding(.trailing, -16)
+
                 routeSelectionView
+                    .padding(.top, 28)
 
                 if viewModel.isSearchButtonVisible {
                     searchButton
