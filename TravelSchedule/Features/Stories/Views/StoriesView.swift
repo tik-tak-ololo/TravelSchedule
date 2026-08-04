@@ -14,14 +14,20 @@ struct StoriesView: View {
     }
 
     let stories: [StoryPreview]
+    let onStoryViewed: (Int) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var currentIndex: Int
     @State private var storyStartedAt = Date()
     @State private var playbackID = 0
 
-    init(stories: [StoryPreview], initialIndex: Int) {
+    init(
+        stories: [StoryPreview],
+        initialIndex: Int,
+        onStoryViewed: @escaping (Int) -> Void
+    ) {
         self.stories = stories
+        self.onStoryViewed = onStoryViewed
         _currentIndex = State(
             initialValue: min(max(initialIndex, 0), max(stories.count - 1, 0))
         )
@@ -39,6 +45,10 @@ struct StoriesView: View {
         .preferredColorScheme(.dark)
         .statusBarHidden(false)
         .task(id: "\(currentIndex)-\(playbackID)") {
+            if stories.indices.contains(currentIndex) {
+                onStoryViewed(stories[currentIndex].id)
+            }
+
             await startStoryTimer()
         }
     }
@@ -241,6 +251,7 @@ struct StoriesView: View {
                 accessibilityLabel: "История о путешествии"
             )
         ],
-        initialIndex: 0
+        initialIndex: 0,
+        onStoryViewed: { _ in }
     )
 }

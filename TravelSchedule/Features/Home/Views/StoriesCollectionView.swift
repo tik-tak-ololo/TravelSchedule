@@ -41,9 +41,19 @@ struct StoriesCollectionView: View {
                         .clipShape(
                             RoundedRectangle(cornerRadius: 16)
                         )
+                        .opacity(story.isViewed ? 0.5 : 1)
+                        .overlay {
+                            if !story.isViewed {
+                                RoundedRectangle(cornerRadius: 16)
+                                    .strokeBorder(.travelBlue, lineWidth: 4)
+                            }
+                        }
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(story.accessibilityLabel)
+                    .accessibilityValue(
+                        story.isViewed ? "Просмотрено" : "Не просмотрено"
+                    )
                 }
             }
         }

@@ -11,6 +11,7 @@ struct StoryPreview: Identifiable {
     let title: String
     let description: String
     let accessibilityLabel: String
+    var isViewed = false
 
     var fullImageName: String {
         "Full\(imageName)"

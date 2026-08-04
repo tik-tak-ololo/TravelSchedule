@@ -61,7 +61,10 @@ struct HomeView: View {
             ) {
                 StoriesView(
                     stories: viewModel.stories,
-                    initialIndex: selectedStoryIndex ?? 0
+                    initialIndex: selectedStoryIndex ?? 0,
+                    onStoryViewed: { storyID in
+                        viewModel.markStoryAsViewed(id: storyID)
+                    }
                 )
             }
         }

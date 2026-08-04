@@ -12,7 +12,7 @@ import Observation
 @Observable
 final class HomeViewModel {
 
-    let stories = [
+    private(set) var stories = [
         StoryPreview(
             id: 0,
             imageName: "Story1",
@@ -83,6 +83,17 @@ final class HomeViewModel {
 
     var isSearchButtonVisible: Bool {
         departure != nil && destination != nil
+    }
+
+    func markStoryAsViewed(id: Int) {
+        guard
+            let index = stories.firstIndex(where: { $0.id == id }),
+            !stories[index].isViewed
+        else {
+            return
+        }
+
+        stories[index].isViewed = true
     }
 
     func select(
