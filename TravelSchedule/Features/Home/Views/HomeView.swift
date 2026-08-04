@@ -13,11 +13,16 @@ struct HomeView: View {
     @State private var viewModel = HomeViewModel()
 
     @State private var navigationPath = NavigationPath()
+    @State private var selectedStoryIndex: Int?
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
             VStack(spacing: 16) {
-                StoriesCollectionView(stories: viewModel.stories)
+                StoriesCollectionView(stories: viewModel.stories) { storyID in
+                    selectedStoryIndex = viewModel.stories.firstIndex {
+                        $0.id == storyID
+                    }
+                }
                     .padding(.trailing, -16)
 
                 routeSelectionView
@@ -43,6 +48,21 @@ struct HomeView: View {
             )
             .navigationDestination(for: HomeRoute.self) { route in
                 destination(for: route)
+            }
+            .fullScreenCover(
+                isPresented: Binding(
+                    get: { selectedStoryIndex != nil },
+                    set: { isPresented in
+                        if !isPresented {
+                            selectedStoryIndex = nil
+                        }
+                    }
+                )
+            ) {
+                StoriesView(
+                    stories: viewModel.stories,
+                    initialIndex: selectedStoryIndex ?? 0
+                )
             }
         }
     }
