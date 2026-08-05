@@ -1,11 +1,11 @@
 //
-//  StoryPreview.swift
+//  Story.swift
 //  TravelSchedule
 //
 
 import Foundation
 
-struct StoryPreview: Identifiable {
+struct Story: Identifiable {
     let id: Int
     let imageName: String
     let title: String

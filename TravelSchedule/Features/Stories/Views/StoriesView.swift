@@ -13,7 +13,7 @@ struct StoriesView: View {
         static let verticalDismissThreshold = 80.0
     }
 
-    let stories: [StoryPreview]
+    let stories: [Story]
     let onStoryViewed: (Int) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -22,7 +22,7 @@ struct StoriesView: View {
     @State private var playbackID = 0
 
     init(
-        stories: [StoryPreview],
+        stories: [Story],
         initialIndex: Int,
         onStoryViewed: @escaping (Int) -> Void
     ) {
@@ -53,7 +53,7 @@ struct StoriesView: View {
         }
     }
 
-    private func storyContent(_ story: StoryPreview) -> some View {
+    private func storyContent(_ story: Story) -> some View {
         GeometryReader { proxy in
             ZStack {
                 Image(story.fullImageName)
@@ -149,7 +149,7 @@ struct StoriesView: View {
         .accessibilityLabel("Закрыть сторис")
     }
 
-    private func storyText(_ story: StoryPreview) -> some View {
+    private func storyText(_ story: Story) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             Text(story.title)
                 .font(.system(size: 34, weight: .bold))
@@ -242,15 +242,7 @@ struct StoriesView: View {
 
 #Preview {
     StoriesView(
-        stories: [
-            StoryPreview(
-                id: 0,
-                imageName: "Story1",
-                title: "Откройте мир новых маршрутов",
-                description: "Находите вдохновение для путешествий и планируйте следующую поездку вместе с нами.",
-                accessibilityLabel: "История о путешествии"
-            )
-        ],
+        stories: Story.mocks,
         initialIndex: 0,
         onStoryViewed: { _ in }
     )
