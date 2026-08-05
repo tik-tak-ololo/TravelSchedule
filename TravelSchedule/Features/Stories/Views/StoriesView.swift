@@ -24,6 +24,8 @@ struct StoriesView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var currentIndex: Int
     @State private var storyStartedAt = Date()
+    @State private var elapsedTimeBeforePause = 0.0
+    @State private var isPlaybackPaused = false
     @State private var playbackID = 0
     @State private var verticalDragOffset = 0.0
     @State private var dragAxis: DragAxis?
@@ -56,7 +58,8 @@ struct StoriesView: View {
             if stories.indices.contains(currentIndex) {
                 onStoryViewed(stories[currentIndex].id)
             }
-
+        }
+        .task(id: "\(currentIndex)-\(playbackID)-\(isPlaybackPaused)") {
             await startStoryTimer()
         }
     }
@@ -106,6 +109,7 @@ struct StoriesView: View {
                 }
             }
             .highPriorityGesture(swipeGesture)
+            .simultaneousGesture(playbackPauseGesture)
         }
     }
 
@@ -220,6 +224,16 @@ struct StoriesView: View {
             }
     }
 
+    private var playbackPauseGesture: some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .global)
+            .onChanged { _ in
+                pauseStoryPlayback()
+            }
+            .onEnded { _ in
+                resumeStoryPlayback()
+            }
+    }
+
     private func resetVerticalDragOffset() {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             verticalDragOffset = 0
@@ -232,7 +246,7 @@ struct StoriesView: View {
         }
 
         if index == currentIndex {
-            let elapsedTime = date.timeIntervalSince(storyStartedAt)
+            let elapsedTime = storyElapsedTime(at: date)
             return min(max(elapsedTime / Constants.storyDuration, 0), 1)
         }
 
@@ -241,10 +255,17 @@ struct StoriesView: View {
 
     @MainActor
     private func startStoryTimer() async {
-        storyStartedAt = .now
+        guard !isPlaybackPaused else {
+            return
+        }
+
+        let remainingDuration = max(
+            Constants.storyDuration - elapsedTimeBeforePause,
+            0
+        )
 
         do {
-            try await Task.sleep(for: .seconds(Constants.storyDuration))
+            try await Task.sleep(for: .seconds(remainingDuration))
         } catch {
             return
         }
@@ -271,6 +292,7 @@ struct StoriesView: View {
     }
 
     private func restartCurrentStory() {
+        resetStoryPlayback()
         playbackID += 1
     }
 
@@ -279,9 +301,43 @@ struct StoriesView: View {
         transaction.disablesAnimations = true
 
         withTransaction(transaction) {
-            storyStartedAt = .now
+            resetStoryPlayback()
             currentIndex = newIndex
         }
+    }
+
+    private func pauseStoryPlayback() {
+        guard !isPlaybackPaused else {
+            return
+        }
+
+        elapsedTimeBeforePause = storyElapsedTime(at: .now)
+        isPlaybackPaused = true
+    }
+
+    private func resumeStoryPlayback() {
+        guard isPlaybackPaused else {
+            return
+        }
+
+        storyStartedAt = .now
+        isPlaybackPaused = false
+    }
+
+    private func resetStoryPlayback() {
+        elapsedTimeBeforePause = 0
+        storyStartedAt = .now
+    }
+
+    private func storyElapsedTime(at date: Date) -> TimeInterval {
+        let elapsedTimeAfterPause = isPlaybackPaused
+            ? 0
+            : max(date.timeIntervalSince(storyStartedAt), 0)
+
+        return min(
+            elapsedTimeBeforePause + elapsedTimeAfterPause,
+            Constants.storyDuration
+        )
     }
 }
 
