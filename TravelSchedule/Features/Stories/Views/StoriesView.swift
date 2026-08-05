@@ -10,7 +10,12 @@ struct StoriesView: View {
     private enum Constants {
         static let storyDuration = 10.0
         static let horizontalSwipeThreshold = 50.0
-        static let verticalDismissThreshold = 80.0
+        static let verticalDismissThreshold = 120.0
+    }
+
+    private enum DragAxis {
+        case horizontal
+        case vertical
     }
 
     let stories: [Story]
@@ -20,6 +25,8 @@ struct StoriesView: View {
     @State private var currentIndex: Int
     @State private var storyStartedAt = Date()
     @State private var playbackID = 0
+    @State private var verticalDragOffset = 0.0
+    @State private var dragAxis: DragAxis?
 
     init(
         stories: [Story],
@@ -40,6 +47,7 @@ struct StoriesView: View {
 
             if stories.indices.contains(currentIndex) {
                 storyContent(stories[currentIndex])
+                    .offset(y: verticalDragOffset)
             }
         }
         .preferredColorScheme(.dark)
@@ -165,20 +173,57 @@ struct StoriesView: View {
     }
 
     private var swipeGesture: some Gesture {
-        DragGesture(minimumDistance: 20)
-            .onEnded { value in
+        DragGesture(minimumDistance: 20, coordinateSpace: .global)
+            .onChanged { value in
                 let horizontalDistance = value.translation.width
                 let verticalDistance = value.translation.height
 
-                if verticalDistance > Constants.verticalDismissThreshold,
-                   abs(verticalDistance) > abs(horizontalDistance) {
-                    dismiss()
-                } else if horizontalDistance < -Constants.horizontalSwipeThreshold {
-                    showNextStory()
-                } else if horizontalDistance > Constants.horizontalSwipeThreshold {
-                    showPreviousStory()
+                if dragAxis == nil {
+                    dragAxis = abs(verticalDistance) > abs(horizontalDistance)
+                        ? .vertical
+                        : .horizontal
+                }
+
+                guard dragAxis == .vertical else {
+                    return
+                }
+
+                verticalDragOffset = max(verticalDistance, 0)
+            }
+            .onEnded { value in
+                let horizontalDistance = value.translation.width
+                let verticalDistance = value.translation.height
+                let completedDragAxis = dragAxis
+
+                dragAxis = nil
+
+                switch completedDragAxis {
+                case .vertical:
+                    if verticalDistance > Constants.verticalDismissThreshold {
+                        dismiss()
+                    } else {
+                        resetVerticalDragOffset()
+                    }
+
+                case .horizontal:
+                    verticalDragOffset = 0
+
+                    if horizontalDistance < -Constants.horizontalSwipeThreshold {
+                        showNextStory()
+                    } else if horizontalDistance > Constants.horizontalSwipeThreshold {
+                        showPreviousStory()
+                    }
+
+                case nil:
+                    resetVerticalDragOffset()
                 }
             }
+    }
+
+    private func resetVerticalDragOffset() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            verticalDragOffset = 0
+        }
     }
 
     private func indicatorProgress(at index: Int, date: Date) -> Double {
