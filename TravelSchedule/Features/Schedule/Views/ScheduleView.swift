@@ -10,18 +10,17 @@ import SwiftUI
 @MainActor
 struct ScheduleView: View {
 
-    @StateObject private var viewModel: ScheduleViewModel
+    @State private var viewModel: ScheduleViewModel
 
     @State private var isFilterPresented = false
-    @State private var isCarrierDetailsPresented = false
     @State private var selectedItem: ScheduleItem?
 
     init(
         departureTitle: String,
         destinationTitle: String
     ) {
-        _viewModel = StateObject(
-            wrappedValue: ScheduleViewModel(
+        _viewModel = State(
+            initialValue: ScheduleViewModel(
                 departureTitle: departureTitle,
                 destinationTitle: destinationTitle
             )
@@ -45,10 +44,8 @@ struct ScheduleView: View {
                 viewModel.applyFilter(filter)
             }
         }
-        .navigationDestination(
-            isPresented: $isCarrierDetailsPresented
-        ) {
-            CarrierDetailsView()
+        .navigationDestination(item: $selectedItem) { item in
+            CarrierDetailsView(carrier: item.carrier)
         }
     }
 
@@ -74,7 +71,6 @@ struct ScheduleView: View {
         ForEach(viewModel.filteredScheduleItems) { item in
             Button {
                 selectedItem = item
-                isCarrierDetailsPresented = true
             } label: {
                 ScheduleCardView(item: item)
             }

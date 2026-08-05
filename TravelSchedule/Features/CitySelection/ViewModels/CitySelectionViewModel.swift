@@ -6,12 +6,13 @@
 //
 
 import Foundation
-import Combine
+import Observation
 
 @MainActor
-final class CitySelectionViewModel: ObservableObject {
+@Observable
+final class CitySelectionViewModel {
 
-    @Published var searchText = ""
+    var searchText = ""
 
     private let cities: [City]
 

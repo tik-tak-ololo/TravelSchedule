@@ -10,6 +10,7 @@ import SwiftUI
 struct AppRootView: View {
 
     @State private var viewModel = AppViewModel()
+    @AppStorage(AppStorageKey.isDarkTheme) private var isDarkTheme = false
 
     var body: some View {
         ZStack {
@@ -29,6 +30,7 @@ struct AppRootView: View {
             .easeInOut(duration: 0.3),
             value: viewModel.screen
         )
+        .preferredColorScheme(isDarkTheme ? .dark : .light)
     }
 }
 

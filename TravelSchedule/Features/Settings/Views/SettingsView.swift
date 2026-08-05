@@ -1,0 +1,88 @@
+//
+//  SettingsView.swift
+//  TravelSchedule
+//
+//  Created by Сергей Хмелёв on 19.07.2026.
+//
+
+import SwiftUI
+
+struct SettingsView: View {
+
+    @AppStorage(AppStorageKey.isDarkTheme) private var isDarkTheme = false
+
+    private let viewModel = SettingsViewModel()
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                themeRow
+
+                NavigationLink {
+                    UserAgreementView()
+                } label: {
+                    agreementRow
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+
+                footer
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 20)
+            .background(Color.backgroundColorIOS)
+        }
+    }
+
+    private var themeRow: some View {
+        HStack(spacing: 16) {
+            Text("Темная тема")
+                .font(.system(size: 17))
+                .foregroundStyle(.textPrimaryIOS)
+
+            Spacer()
+
+            Toggle("", isOn: $isDarkTheme)
+                .labelsHidden()
+                .tint(.travelBlue)
+        }
+        .frame(height: 60)
+    }
+
+    private var agreementRow: some View {
+        HStack(spacing: 16) {
+            Text("Пользовательское соглашение")
+                .font(.system(size: 17))
+                .foregroundStyle(.textPrimaryIOS)
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(.textPrimaryIOS)
+        }
+        .frame(height: 60)
+        .contentShape(Rectangle())
+    }
+
+    private var footer: some View {
+        VStack(spacing: 16) {
+            Text(viewModel.apiDescription)
+            Text(viewModel.versionDescription)
+        }
+        .font(.system(size: 12))
+        .foregroundStyle(.textPrimaryIOS)
+        .multilineTextAlignment(.center)
+    }
+}
+
+#Preview("Light") {
+    SettingsView()
+        .preferredColorScheme(.light)
+}
+
+#Preview("Dark") {
+    SettingsView()
+        .preferredColorScheme(.dark)
+}

@@ -6,16 +6,30 @@
 //
 
 import Foundation
-import Combine
+import Observation
 
 @MainActor
-final class HomeViewModel: ObservableObject {
+@Observable
+final class HomeViewModel {
 
-    @Published private(set) var departure: RoutePoint?
-    @Published private(set) var destination: RoutePoint?
+    private(set) var stories = Story.mocks
+
+    private(set) var departure: RoutePoint?
+    private(set) var destination: RoutePoint?
 
     var isSearchButtonVisible: Bool {
         departure != nil && destination != nil
+    }
+
+    func markStoryAsViewed(id: Int) {
+        guard
+            let index = stories.firstIndex(where: { $0.id == id }),
+            !stories[index].isViewed
+        else {
+            return
+        }
+
+        stories[index].isViewed = true
     }
 
     func select(

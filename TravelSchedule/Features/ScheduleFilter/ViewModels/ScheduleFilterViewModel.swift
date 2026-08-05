@@ -6,12 +6,13 @@
 //
 
 import Foundation
-import Combine
+import Observation
 
 @MainActor
-final class ScheduleFilterViewModel: ObservableObject {
+@Observable
+final class ScheduleFilterViewModel {
 
-    @Published var filter: ScheduleFilter
+    var filter: ScheduleFilter
 
     init(filter: ScheduleFilter) {
         self.filter = filter

@@ -10,7 +10,7 @@ import SwiftUI
 @MainActor
 struct StationSelectionView: View {
 
-    @StateObject private var viewModel: StationSelectionViewModel
+    @State private var viewModel: StationSelectionViewModel
     @FocusState private var isSearchFocused: Bool
 
     @Environment(\.dismiss) private var dismiss
@@ -25,8 +25,8 @@ struct StationSelectionView: View {
     ) {
         self.city = city
 
-        _viewModel = StateObject(
-            wrappedValue: StationSelectionViewModel(
+        _viewModel = State(
+            initialValue: StationSelectionViewModel(
                 stations: stations
             )
         )
@@ -40,8 +40,8 @@ struct StationSelectionView: View {
     ) {
         self.city = city
 
-        _viewModel = StateObject(
-            wrappedValue: StationSelectionViewModel(
+        _viewModel = State(
+            initialValue: StationSelectionViewModel(
                 stations: Station.mockStations(for: city)
             )
         )
@@ -50,6 +50,8 @@ struct StationSelectionView: View {
     }
 
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         VStack(spacing: 0) {
             navigationBar
 

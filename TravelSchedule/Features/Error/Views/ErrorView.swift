@@ -9,10 +9,10 @@ import SwiftUI
 
 struct ErrorView: View {
 
-    @StateObject private var viewModel: ErrorViewModel
+    @State private var viewModel: ErrorViewModel
 
     init(viewModel: ErrorViewModel) {
-        _viewModel = StateObject(wrappedValue: viewModel)
+        _viewModel = State(initialValue: viewModel)
     }
 
     var body: some View {

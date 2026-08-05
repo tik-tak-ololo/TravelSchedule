@@ -66,8 +66,8 @@ struct ScheduleCardView: View {
 
     @ViewBuilder
     private var carrierLogo: some View {
-        if UIImage(named: item.carrier.logoAssetName) != nil {
-            Image(item.carrier.logoAssetName)
+        if UIImage(named: item.carrier.logoSmallAssetName) != nil {
+            Image(item.carrier.logoSmallAssetName)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 38, height: 38)

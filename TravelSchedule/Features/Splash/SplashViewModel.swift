@@ -6,12 +6,13 @@
 //
 
 import Foundation
-import Combine
+import Observation
 
 @MainActor
-final class SplashViewModel: ObservableObject {
+@Observable
+final class SplashViewModel {
 
-    @Published private(set) var isFinished = false
+    private(set) var isFinished = false
 
     private let displayDuration: Duration
 
