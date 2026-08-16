@@ -30,76 +30,81 @@ struct UserAgreementView: View {
     }
 }
 
-private struct WebView: UIViewRepresentable {
+@MainActor
+private struct WebView: View {
 
     let url: URL
     let colorScheme: ColorScheme
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator()
+    @State private var webView = WKWebView()
+
+    private var loadConfiguration: LoadConfiguration {
+        LoadConfiguration(
+            url: url,
+            theme: WebsiteTheme(colorScheme: colorScheme)
+        )
     }
 
-    func makeUIView(context: Context) -> WKWebView {
-        let webView = WKWebView()
-        let theme = WebsiteTheme(colorScheme: colorScheme)
+    var body: some View {
+        WebViewRepresentable(
+            webView: webView,
+            theme: loadConfiguration.theme
+        )
+        .task(id: loadConfiguration) {
+            await loadPage(using: loadConfiguration)
+        }
+    }
 
-        context.coordinator.theme = theme
-        configure(webView, for: theme)
-        setCookie(for: theme, in: webView) {
-            webView.load(URLRequest(url: url))
+    private func loadPage(using configuration: LoadConfiguration) async {
+        if let cookie = configuration.theme.cookie {
+            await webView.configuration.websiteDataStore.httpCookieStore
+                .setCookie(cookie)
         }
 
-        return webView
-    }
-
-    func updateUIView(_ webView: WKWebView, context: Context) {
-        let theme = WebsiteTheme(colorScheme: colorScheme)
-
-        guard context.coordinator.theme != theme else {
+        guard !Task.isCancelled else {
             return
         }
 
-        context.coordinator.theme = theme
-        configure(webView, for: theme)
-        setCookie(for: theme, in: webView) {
-            webView.reload()
-        }
-    }
-
-    private func configure(
-        _ webView: WKWebView,
-        for theme: WebsiteTheme
-    ) {
-        webView.overrideUserInterfaceStyle = theme.userInterfaceStyle
-        webView.isOpaque = false
-        webView.backgroundColor = .clear
-        webView.scrollView.backgroundColor = .clear
-    }
-
-    private func setCookie(
-        for theme: WebsiteTheme,
-        in webView: WKWebView,
-        completion: @escaping @MainActor @Sendable () -> Void
-    ) {
-        guard let cookie = theme.cookie else {
-            completion()
-            return
-        }
-
-        webView.configuration.websiteDataStore.httpCookieStore.setCookie(
-            cookie
-        ) {
-            Task { @MainActor in
-                completion()
-            }
-        }
+        webView.load(URLRequest(url: configuration.url))
     }
 }
 
 private extension WebView {
 
-    final class Coordinator {
-        var theme: WebsiteTheme?
+    struct LoadConfiguration: Equatable {
+        let url: URL
+        let theme: WebsiteTheme
+    }
+
+    struct WebViewRepresentable: UIViewRepresentable {
+        let webView: WKWebView
+        let theme: WebsiteTheme
+
+        func makeUIView(context: Context) -> WKWebView {
+            configure(webView, for: theme)
+            return webView
+        }
+
+        func updateUIView(_ webView: WKWebView, context: Context) {
+            configure(webView, for: theme)
+        }
+
+        static func dismantleUIView(
+            _ webView: WKWebView,
+            coordinator: Void
+        ) {
+            webView.stopLoading()
+        }
+
+        private func configure(
+            _ webView: WKWebView,
+            for theme: WebsiteTheme
+        ) {
+            webView.overrideUserInterfaceStyle = theme.userInterfaceStyle
+            webView.isOpaque = false
+            webView.backgroundColor = .clear
+            webView.scrollView.backgroundColor = .clear
+        }
     }
 
     enum WebsiteTheme: String {
