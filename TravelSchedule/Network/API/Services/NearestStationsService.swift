@@ -10,11 +10,11 @@ import OpenAPIURLSession
 
 typealias NearestStationsResponse = Components.Schemas.StationsResponse
 
-protocol NearestStationsServiceProtocol {
+protocol NearestStationsServiceProtocol: Sendable {
     func getNearestStations(lat: Double, lng: Double, distance: Int) async throws -> NearestStationsResponse
 }
 
-final class NearestStationsService: NearestStationsServiceProtocol {
+final class NearestStationsService: NearestStationsServiceProtocol, Sendable {
     private let client: Client
   
     init(client: Client) {

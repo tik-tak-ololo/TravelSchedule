@@ -25,26 +25,38 @@ actor NetworkClient: CitiesProviding, StationsProviding {
         }
     }()
 
-    private let client: Client
+    private let copyrightService: any CopyrightServiceProtocol
+    private let nearestStationsService: any NearestStationsServiceProtocol
+    private let segmentsService: any SegmentsServiceProtocol
+    private let scheduleService: any ScheduleServiceProtocol
+    private let threadStationsService: any ThreadStationsServiceProtocol
+    private let nearestCityService: any NearestCityServiceProtocol
+    private let carrierService: any CarrierServiceProtocol
+    private let allStationsService: any AllStationsServiceProtocol
     private var cachedCities: [City]?
     private var cachedStationsByCityKey: [String: [Station]]?
 
     init(apiKey: String = APIConfiguration.apiKey) throws {
-        client = Client(
+        let client = Client(
             serverURL: try Servers.Server1.url(),
             transport: URLSessionTransport(),
             middlewares: [
                 AuthorizationMiddleware(apiKey: apiKey)
             ]
         )
+
+        copyrightService = CopyrightService(client: client)
+        nearestStationsService = NearestStationsService(client: client)
+        segmentsService = SegmentsService(client: client)
+        scheduleService = ScheduleService(client: client)
+        threadStationsService = ThreadStationsService(client: client)
+        nearestCityService = NearestCityService(client: client)
+        carrierService = CarrierService(client: client)
+        allStationsService = AllStationsService(client: client)
     }
 
     func getCopyright() async throws -> CopyrightResponse {
-        let response = try await client.getCopyright(
-            query: .init(format: .json)
-        )
-
-        return try response.ok.body.json
+        try await copyrightService.getCopyright()
     }
 
     func getNearestStations(
@@ -52,45 +64,29 @@ actor NetworkClient: CitiesProviding, StationsProviding {
         lng: Double,
         distance: Int
     ) async throws -> NearestStationsResponse {
-        let response = try await client.getNearestStations(
-            query: .init(
-                lat: lat,
-                lng: lng,
-                distance: distance
-            )
+        try await nearestStationsService.getNearestStations(
+            lat: lat,
+            lng: lng,
+            distance: distance
         )
-
-        return try response.ok.body.json
     }
 
     func getScheduleBetweenStations(
         from: String,
         to: String
     ) async throws -> SegmentsResponse {
-        let response = try await client.getSchedualBetweenStations(
-            query: .init(
-                from: from,
-                to: to
-            )
+        try await segmentsService.getScheduleBetweenStations(
+            from: from,
+            to: to
         )
-
-        return try response.ok.body.json
     }
 
     func getStationSchedule(station: String) async throws -> ScheduleResponse {
-        let response = try await client.getStationSchedule(
-            query: .init(station: station)
-        )
-
-        return try response.ok.body.json
+        try await scheduleService.getStationSchedule(station: station)
     }
 
     func getRouteStations(uid: String) async throws -> ThreadStationsResponse {
-        let response = try await client.getRouteStations(
-            query: .init(uid: uid)
-        )
-
-        return try response.ok.body.json
+        try await threadStationsService.getRouteStations(uid: uid)
     }
 
     func getNearestCity(
@@ -98,42 +94,19 @@ actor NetworkClient: CitiesProviding, StationsProviding {
         lng: Double,
         distance: Int
     ) async throws -> NearestCityResponse {
-        let response = try await client.getNearestCity(
-            query: .init(
-                lat: lat,
-                lng: lng,
-                distance: distance
-            )
+        try await nearestCityService.getNearestCity(
+            lat: lat,
+            lng: lng,
+            distance: distance
         )
-
-        return try response.ok.body.json
     }
 
     func getCarrierInfo(code: String) async throws -> CarrierResponse {
-        let response = try await client.getCarrierInfo(
-            query: .init(code: code)
-        )
-
-        return try response.ok.body.json
+        try await carrierService.getCarrierInfo(code: code)
     }
 
     func getAllStations() async throws -> AllStationsResponse {
-        let response = try await client.getAllStations(
-            query: .init(
-                lang: "ru_RU",
-                format: "json"
-            )
-        )
-        let body = try response.ok.body.text_html_charset_utf_hyphen_8
-        let data = try await Data(
-            collecting: body,
-            upTo: 100 * 1024 * 1024
-        )
-
-        return try JSONDecoder().decode(
-            AllStationsResponse.self,
-            from: data
-        )
+        try await allStationsService.getAllStations()
     }
 
     func getCities() async throws -> [City] {

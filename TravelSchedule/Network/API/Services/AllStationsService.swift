@@ -11,11 +11,11 @@ import Foundation
 
 typealias AllStationsResponse = Components.Schemas.AllStationsResponse
 
-protocol AllStationsServiceProtocol {
-  func getAllStations() async throws -> AllStationsResponse
+protocol AllStationsServiceProtocol: Sendable {
+    func getAllStations() async throws -> AllStationsResponse
 }
 
-final class AllStationsService: AllStationsServiceProtocol {
+final class AllStationsService: AllStationsServiceProtocol, Sendable {
     private let client: Client
   
     init(client: Client) {
@@ -23,7 +23,12 @@ final class AllStationsService: AllStationsServiceProtocol {
     }
   
     func getAllStations() async throws -> AllStationsResponse {
-        let response = try await client.getAllStations(query: .init(format: "json"))
+        let response = try await client.getAllStations(
+            query: .init(
+                lang: "ru_RU",
+                format: "json"
+            )
+        )
 
         let ok = try response.ok
         let body = try ok.body.text_html_charset_utf_hyphen_8
