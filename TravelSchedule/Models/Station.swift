@@ -7,17 +7,20 @@
 
 import Foundation
 
-struct Station: Identifiable, Hashable {
+struct Station: Identifiable, Hashable, Sendable {
 
     let id: UUID
     let name: String
+    let code: String?
 
     init(
         id: UUID = UUID(),
-        name: String
+        name: String,
+        code: String? = nil
     ) {
         self.id = id
         self.name = name
+        self.code = code
     }
 }
 

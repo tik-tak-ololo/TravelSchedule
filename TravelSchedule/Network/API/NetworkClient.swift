@@ -11,7 +11,11 @@ protocol CitiesProviding: Sendable {
     func getCities() async throws -> [City]
 }
 
-actor NetworkClient: CitiesProviding {
+protocol StationsProviding: Sendable {
+    func getStations(for city: City) async throws -> [Station]
+}
+
+actor NetworkClient: CitiesProviding, StationsProviding {
 
     static let shared: NetworkClient = {
         do {
@@ -23,6 +27,7 @@ actor NetworkClient: CitiesProviding {
 
     private let client: Client
     private var cachedCities: [City]?
+    private var cachedStationsByCityKey: [String: [Station]]?
 
     init(apiKey: String = APIConfiguration.apiKey) throws {
         client = Client(
@@ -136,8 +141,30 @@ actor NetworkClient: CitiesProviding {
             return cachedCities
         }
 
+        try await loadStationDirectory()
+
+        return cachedCities ?? []
+    }
+
+    func getStations(for city: City) async throws -> [Station] {
+        if cachedStationsByCityKey == nil {
+            try await loadStationDirectory()
+        }
+
+        if let code = city.code?.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        ), !code.isEmpty,
+           let stations = cachedStationsByCityKey?[Self.codeKey(code)] {
+            return stations
+        }
+
+        return cachedStationsByCityKey?[Self.nameKey(city.name)] ?? []
+    }
+
+    private func loadStationDirectory() async throws {
         let response = try await getAllStations()
         var citiesByName: [String: City] = [:]
+        var stationsByCityKey: [String: [Station]] = [:]
 
         for country in response.countries ?? [] {
             for region in country.regions ?? [] {
@@ -148,17 +175,25 @@ actor NetworkClient: CitiesProviding {
                         continue
                     }
 
-                    let normalizedName = name.folding(
-                        options: [.caseInsensitive, .diacriticInsensitive],
-                        locale: Locale(identifier: "ru_RU")
-                    )
+                    let normalizedName = Self.normalized(name)
+                    let code = settlement.codes?.yandex_code?
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                    let stations = Self.stations(from: settlement.stations ?? [])
 
                     if citiesByName[normalizedName] == nil {
-                        let code = settlement.codes?.yandex_code
                         citiesByName[normalizedName] = City(
                             name: name,
-                            code: code
+                            code: code?.isEmpty == false ? code : nil
                         )
+                    }
+
+                    if let code, !code.isEmpty {
+                        stationsByCityKey[Self.codeKey(code)] = stations
+                    }
+
+                    let nameKey = Self.nameKey(name)
+                    if stationsByCityKey[nameKey] == nil {
+                        stationsByCityKey[nameKey] = stations
                     }
                 }
             }
@@ -168,7 +203,57 @@ actor NetworkClient: CitiesProviding {
             $0.name.localizedStandardCompare($1.name) == .orderedAscending
         }
         cachedCities = cities
+        cachedStationsByCityKey = stationsByCityKey
+    }
 
-        return cities
+    private static func stations(
+        from apiStations: [Components.Schemas.Station]
+    ) -> [Station] {
+        var stationsByIdentifier: [String: Station] = [:]
+
+        for apiStation in apiStations {
+            guard let name = apiStation.title?
+                .trimmingCharacters(in: .whitespacesAndNewlines),
+                  !name.isEmpty else {
+                continue
+            }
+
+            let code = (
+                apiStation.codes?.yandex_code ?? apiStation.code
+            )?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let identifier: String
+
+            if let code, !code.isEmpty {
+                identifier = codeKey(code)
+            } else {
+                identifier = nameKey(name)
+            }
+
+            if stationsByIdentifier[identifier] == nil {
+                stationsByIdentifier[identifier] = Station(
+                    name: name,
+                    code: code?.isEmpty == false ? code : nil
+                )
+            }
+        }
+
+        return stationsByIdentifier.values.sorted {
+            $0.name.localizedStandardCompare($1.name) == .orderedAscending
+        }
+    }
+
+    private static func codeKey(_ code: String) -> String {
+        "code:\(code)"
+    }
+
+    private static func nameKey(_ name: String) -> String {
+        "name:\(normalized(name))"
+    }
+
+    private static func normalized(_ value: String) -> String {
+        value.folding(
+            options: [.caseInsensitive, .diacriticInsensitive],
+            locale: Locale(identifier: "ru_RU")
+        )
     }
 }
