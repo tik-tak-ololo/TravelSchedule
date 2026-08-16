@@ -9,17 +9,32 @@ enum AppStorageKey {
 @Observable
 final class SettingsViewModel {
 
+    var isDarkTheme: Bool {
+        didSet {
+            userDefaults.set(
+                isDarkTheme,
+                forKey: AppStorageKey.isDarkTheme
+            )
+        }
+    }
+
     private(set) var copyrightText: String?
     private(set) var copyrightLogoURL: URL?
     private(set) var copyrightURL: URL?
 
     private let copyrightProvider: any CopyrightProviding
+    private let userDefaults: UserDefaults
     private var hasLoadedCopyright = false
 
     init(
-        copyrightProvider: any CopyrightProviding = NetworkClient.shared
+        copyrightProvider: any CopyrightProviding = NetworkClient.shared,
+        userDefaults: UserDefaults = .standard
     ) {
         self.copyrightProvider = copyrightProvider
+        self.userDefaults = userDefaults
+        isDarkTheme = userDefaults.bool(
+            forKey: AppStorageKey.isDarkTheme
+        )
     }
 
     var versionDescription: String {

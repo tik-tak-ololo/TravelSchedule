@@ -10,7 +10,6 @@ import SwiftUI
 @MainActor
 struct SettingsView: View {
 
-    @AppStorage(AppStorageKey.isDarkTheme) private var isDarkTheme = false
     @State private var viewModel: SettingsViewModel
 
     init(
@@ -24,9 +23,11 @@ struct SettingsView: View {
     }
 
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         NavigationStack {
             VStack(spacing: 0) {
-                themeRow
+                themeRow(isDarkTheme: $viewModel.isDarkTheme)
 
                 NavigationLink {
                     UserAgreementView()
@@ -48,7 +49,7 @@ struct SettingsView: View {
         }
     }
 
-    private var themeRow: some View {
+    private func themeRow(isDarkTheme: Binding<Bool>) -> some View {
         HStack(spacing: 16) {
             Text("Темная тема")
                 .font(.system(size: 17))
@@ -56,7 +57,7 @@ struct SettingsView: View {
 
             Spacer()
 
-            Toggle("", isOn: $isDarkTheme)
+            Toggle("", isOn: isDarkTheme)
                 .labelsHidden()
                 .tint(.travelBlue)
         }

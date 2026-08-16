@@ -5,10 +5,10 @@
 
 import SwiftUI
 
+@MainActor
 struct StoriesView: View {
 
     private enum Constants {
-        static let storyDuration = 10.0
         static let horizontalSwipeThreshold = 50.0
         static let verticalDismissThreshold = 120.0
     }
@@ -18,15 +18,8 @@ struct StoriesView: View {
         case vertical
     }
 
-    let stories: [Story]
-    let onStoryViewed: (Int) -> Void
-
     @Environment(\.dismiss) private var dismiss
-    @State private var currentIndex: Int
-    @State private var storyStartedAt = Date()
-    @State private var elapsedTimeBeforePause = 0.0
-    @State private var isPlaybackPaused = false
-    @State private var playbackID = 0
+    @State private var viewModel: StoriesViewModel
     @State private var verticalDragOffset = 0.0
     @State private var dragAxis: DragAxis?
 
@@ -35,10 +28,12 @@ struct StoriesView: View {
         initialIndex: Int,
         onStoryViewed: @escaping (Int) -> Void
     ) {
-        self.stories = stories
-        self.onStoryViewed = onStoryViewed
-        _currentIndex = State(
-            initialValue: min(max(initialIndex, 0), max(stories.count - 1, 0))
+        _viewModel = State(
+            initialValue: StoriesViewModel(
+                stories: stories,
+                initialIndex: initialIndex,
+                onStoryViewed: onStoryViewed
+            )
         )
     }
 
@@ -47,20 +42,19 @@ struct StoriesView: View {
             Color(red: 0.11, green: 0.12, blue: 0.15)
                 .ignoresSafeArea()
 
-            if stories.indices.contains(currentIndex) {
-                storyContent(stories[currentIndex])
+            if let currentStory = viewModel.currentStory {
+                storyContent(currentStory)
                     .offset(y: verticalDragOffset)
             }
         }
         .preferredColorScheme(.dark)
         .statusBarHidden(false)
-        .task(id: "\(currentIndex)-\(playbackID)") {
-            if stories.indices.contains(currentIndex) {
-                onStoryViewed(stories[currentIndex].id)
-            }
+        .task(id: viewModel.currentStoryTaskID) {
+            viewModel.markCurrentStoryAsViewed()
         }
-        .task(id: "\(currentIndex)-\(playbackID)-\(isPlaybackPaused)") {
-            await startStoryTimer()
+        .task(id: viewModel.playbackTaskID) {
+            let transition = await viewModel.startStoryTimer()
+            handle(transition)
         }
     }
 
@@ -103,9 +97,9 @@ struct StoriesView: View {
             .contentShape(Rectangle())
             .onTapGesture { location in
                 if location.x < proxy.size.width / 2 {
-                    showPreviousStory()
+                    handle(viewModel.showPreviousStory())
                 } else {
-                    showNextStory()
+                    handle(viewModel.showNextStory())
                 }
             }
             .highPriorityGesture(swipeGesture)
@@ -115,13 +109,8 @@ struct StoriesView: View {
 
     private var progressIndicators: some View {
         TimelineView(.animation) { context in
-            let currentProgress = indicatorProgress(
-                at: currentIndex,
-                date: context.date
-            )
-
             HStack(spacing: 6) {
-                ForEach(stories.indices, id: \.self) { index in
+                ForEach(viewModel.stories.indices, id: \.self) { index in
                     GeometryReader { proxy in
                         Capsule()
                             .fill(.white)
@@ -129,10 +118,11 @@ struct StoriesView: View {
                                 Capsule()
                                     .fill(.blue)
                                     .frame(
-                                        width: proxy.size.width * indicatorProgress(
-                                            at: index,
-                                            date: context.date
-                                        )
+                                        width: proxy.size.width
+                                            * viewModel.indicatorProgress(
+                                                at: index,
+                                                date: context.date
+                                            )
                                     )
                             }
                     }
@@ -140,9 +130,11 @@ struct StoriesView: View {
                 }
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Сторис \(currentIndex + 1) из \(stories.count)")
+            .accessibilityLabel(
+                "Сторис \(viewModel.currentIndex + 1) из \(viewModel.stories.count)"
+            )
             .accessibilityValue(
-                "Осталось \(Int(ceil((1 - currentProgress) * Constants.storyDuration))) секунд"
+                "Осталось \(viewModel.remainingSeconds(at: context.date)) секунд"
             )
         }
     }
@@ -213,9 +205,9 @@ struct StoriesView: View {
                     verticalDragOffset = 0
 
                     if horizontalDistance < -Constants.horizontalSwipeThreshold {
-                        showNextStory()
+                        handle(viewModel.showNextStory())
                     } else if horizontalDistance > Constants.horizontalSwipeThreshold {
-                        showPreviousStory()
+                        handle(viewModel.showPreviousStory())
                     }
 
                 case nil:
@@ -227,10 +219,10 @@ struct StoriesView: View {
     private var playbackPauseGesture: some Gesture {
         DragGesture(minimumDistance: 0, coordinateSpace: .global)
             .onChanged { _ in
-                pauseStoryPlayback()
+                viewModel.pauseStoryPlayback()
             }
             .onEnded { _ in
-                resumeStoryPlayback()
+                viewModel.resumeStoryPlayback()
             }
     }
 
@@ -240,104 +232,10 @@ struct StoriesView: View {
         }
     }
 
-    private func indicatorProgress(at index: Int, date: Date) -> Double {
-        if index < currentIndex {
-            return 1
-        }
-
-        if index == currentIndex {
-            let elapsedTime = storyElapsedTime(at: date)
-            return min(max(elapsedTime / Constants.storyDuration, 0), 1)
-        }
-
-        return 0
-    }
-
-    @MainActor
-    private func startStoryTimer() async {
-        guard !isPlaybackPaused else {
-            return
-        }
-
-        let remainingDuration = max(
-            Constants.storyDuration - elapsedTimeBeforePause,
-            0
-        )
-
-        do {
-            try await Task.sleep(for: .seconds(remainingDuration))
-        } catch {
-            return
-        }
-
-        showNextStory()
-    }
-
-    private func showPreviousStory() {
-        guard currentIndex > stories.startIndex else {
-            restartCurrentStory()
-            return
-        }
-
-        updateCurrentIndex(to: currentIndex - 1)
-    }
-
-    private func showNextStory() {
-        guard currentIndex < stories.count - 1 else {
+    private func handle(_ transition: StoriesViewModel.Transition) {
+        if case .dismiss = transition {
             dismiss()
-            return
         }
-
-        updateCurrentIndex(to: currentIndex + 1)
-    }
-
-    private func restartCurrentStory() {
-        resetStoryPlayback()
-        playbackID += 1
-    }
-
-    private func updateCurrentIndex(to newIndex: Int) {
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-
-        withTransaction(transaction) {
-            resetStoryPlayback()
-            currentIndex = newIndex
-        }
-    }
-
-    private func pauseStoryPlayback() {
-        guard !isPlaybackPaused else {
-            return
-        }
-
-        elapsedTimeBeforePause = storyElapsedTime(at: .now)
-        isPlaybackPaused = true
-    }
-
-    private func resumeStoryPlayback() {
-        guard isPlaybackPaused else {
-            return
-        }
-
-        storyStartedAt = .now
-        isPlaybackPaused = false
-    }
-
-    private func resetStoryPlayback() {
-        elapsedTimeBeforePause = 0
-        storyStartedAt = .now
-    }
-
-    private func storyElapsedTime(at date: Date) -> TimeInterval {
-        let elapsedTimeAfterPause = isPlaybackPaused
-            ? 0
-            : max(date.timeIntervalSince(storyStartedAt), 0)
-
-        return min(
-            elapsedTimeBeforePause + elapsedTimeAfterPause,
-            Constants.storyDuration
-        )
     }
 }
 

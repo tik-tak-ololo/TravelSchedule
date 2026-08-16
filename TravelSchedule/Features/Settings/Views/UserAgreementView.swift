@@ -1,17 +1,21 @@
 import SwiftUI
 import WebKit
 
+@MainActor
 struct UserAgreementView: View {
 
     @Environment(\.colorScheme) private var colorScheme
+    @State private var viewModel: UserAgreementViewModel
 
-    private let offerURL = URL(
-        string: "https://yandex.ru/legal/practicum_offer/"
-    )
+    init(offerURL: URL? = UserAgreementViewModel.defaultOfferURL) {
+        _viewModel = State(
+            initialValue: UserAgreementViewModel(offerURL: offerURL)
+        )
+    }
 
     var body: some View {
         Group {
-            if let offerURL {
+            if let offerURL = viewModel.offerURL {
                 WebView(
                     url: offerURL,
                     colorScheme: colorScheme
