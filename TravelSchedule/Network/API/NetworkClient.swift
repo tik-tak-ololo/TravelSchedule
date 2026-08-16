@@ -22,7 +22,14 @@ protocol ScheduleProviding: Sendable {
     ) async throws -> [ScheduleItem]
 }
 
-actor NetworkClient: CitiesProviding, StationsProviding, ScheduleProviding {
+protocol CarrierProviding: Sendable {
+    func getCarrierInfo(code: String) async throws -> Carrier
+}
+
+actor NetworkClient: CitiesProviding,
+                     StationsProviding,
+                     ScheduleProviding,
+                     CarrierProviding {
 
     static let shared: NetworkClient = {
         do {
@@ -144,8 +151,18 @@ actor NetworkClient: CitiesProviding, StationsProviding, ScheduleProviding {
         )
     }
 
-    func getCarrierInfo(code: String) async throws -> CarrierResponse {
-        try await carrierService.getCarrierInfo(code: code)
+    func getCarrierInfo(code: String) async throws -> Carrier {
+        let response = try await carrierService.getCarrierInfo(code: code)
+        let apiCarrier = response.carrier
+
+        return Carrier(
+            code: apiCarrier.code.map(String.init) ?? code,
+            title: Self.nonempty(apiCarrier.title) ?? "",
+            logoURL: Self.url(from: apiCarrier.logo),
+            website: Self.url(from: apiCarrier.url),
+            email: Self.nonempty(apiCarrier.email),
+            phone: Self.nonempty(apiCarrier.phone)
+        )
     }
 
     func getAllStations() async throws -> AllStationsResponse {
@@ -271,6 +288,7 @@ actor NetworkClient: CitiesProviding, StationsProviding, ScheduleProviding {
 
         let apiCarrier = segment.thread?.carrier
         let carrier = Carrier(
+            code: apiCarrier?.code.map(String.init),
             title: nonempty(apiCarrier?.title) ?? "Перевозчик не указан",
             logoURL: url(from: apiCarrier?.logo),
             website: url(from: apiCarrier?.url),

@@ -10,6 +10,7 @@ import Foundation
 struct Carrier: Identifiable, Hashable, Sendable {
 
     let id: UUID
+    let code: String?
     let title: String
     let logoURL: URL?
     let website: URL?
@@ -18,6 +19,7 @@ struct Carrier: Identifiable, Hashable, Sendable {
 
     init(
         id: UUID = UUID(),
+        code: String? = nil,
         title: String,
         logoURL: URL? = nil,
         website: URL? = nil,
@@ -25,6 +27,7 @@ struct Carrier: Identifiable, Hashable, Sendable {
         phone: String? = nil
     ) {
         self.id = id
+        self.code = code
         self.title = title
         self.logoURL = logoURL
         self.website = website
