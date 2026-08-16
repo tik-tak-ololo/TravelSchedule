@@ -30,6 +30,16 @@ protocol CopyrightProviding: Sendable {
     func getCopyright() async throws -> CopyrightResponse
 }
 
+private struct InFlightRequest<Value: Sendable>: Sendable {
+    let id: UUID
+    let task: Task<Value, Error>
+}
+
+private struct StationDirectory: Sendable {
+    let cities: [City]
+    let stationsByCityKey: [String: [Station]]
+}
+
 actor NetworkClient: CitiesProviding,
                      StationsProviding,
                      ScheduleProviding,
@@ -55,6 +65,10 @@ actor NetworkClient: CitiesProviding,
     private var cachedCities: [City]?
     private var cachedStationsByCityKey: [String: [Station]]?
     private var cachedCarriersByCode: [String: Carrier] = [:]
+    private var stationDirectoryRequest: InFlightRequest<StationDirectory>?
+    private var carrierRequestsByCode: [
+        String: InFlightRequest<Carrier>
+    ] = [:]
 
     init(apiKey: String = APIConfiguration.apiKey) throws {
         let client = Client(
@@ -166,20 +180,48 @@ actor NetworkClient: CitiesProviding,
             return cachedCarrier
         }
 
-        let response = try await carrierService.getCarrierInfo(code: code)
-        let apiCarrier = response.carrier
-        let carrier = Carrier(
-            code: apiCarrier.code.map(String.init) ?? code,
-            title: Self.nonempty(apiCarrier.title) ?? "",
-            logoURL: Self.url(from: apiCarrier.logo),
-            website: Self.url(from: apiCarrier.url),
-            email: Self.nonempty(apiCarrier.email),
-            phone: Self.nonempty(apiCarrier.phone)
-        )
+        let request: InFlightRequest<Carrier>
 
-        cachedCarriersByCode[code] = carrier
+        if let currentRequest = carrierRequestsByCode[code] {
+            request = currentRequest
+        } else {
+            let id = UUID()
+            let task = Task { [carrierService] in
+                let response = try await carrierService.getCarrierInfo(
+                    code: code
+                )
+                let apiCarrier = response.carrier
 
-        return carrier
+                return Carrier(
+                    code: apiCarrier.code.map(String.init) ?? code,
+                    title: Self.nonempty(apiCarrier.title) ?? "",
+                    logoURL: Self.url(from: apiCarrier.logo),
+                    website: Self.url(from: apiCarrier.url),
+                    email: Self.nonempty(apiCarrier.email),
+                    phone: Self.nonempty(apiCarrier.phone)
+                )
+            }
+
+            request = InFlightRequest(id: id, task: task)
+            carrierRequestsByCode[code] = request
+        }
+
+        do {
+            let carrier = try await request.task.value
+
+            cachedCarriersByCode[code] = carrier
+            if carrierRequestsByCode[code]?.id == request.id {
+                carrierRequestsByCode[code] = nil
+            }
+
+            return carrier
+        } catch {
+            if carrierRequestsByCode[code]?.id == request.id {
+                carrierRequestsByCode[code] = nil
+            }
+
+            throw error
+        }
     }
 
     func getAllStations() async throws -> AllStationsResponse {
@@ -287,7 +329,41 @@ actor NetworkClient: CitiesProviding,
     }
 
     private func loadStationDirectory() async throws {
-        let response = try await getAllStations()
+        let request: InFlightRequest<StationDirectory>
+
+        if let currentRequest = stationDirectoryRequest {
+            request = currentRequest
+        } else {
+            let id = UUID()
+            let task = Task { [allStationsService] in
+                let response = try await allStationsService.getAllStations()
+                return Self.stationDirectory(from: response)
+            }
+
+            request = InFlightRequest(id: id, task: task)
+            stationDirectoryRequest = request
+        }
+
+        do {
+            let directory = try await request.task.value
+
+            cachedCities = directory.cities
+            cachedStationsByCityKey = directory.stationsByCityKey
+            if stationDirectoryRequest?.id == request.id {
+                stationDirectoryRequest = nil
+            }
+        } catch {
+            if stationDirectoryRequest?.id == request.id {
+                stationDirectoryRequest = nil
+            }
+
+            throw error
+        }
+    }
+
+    private static func stationDirectory(
+        from response: AllStationsResponse
+    ) -> StationDirectory {
         var citiesByName: [String: City] = [:]
         var stationsByCityKey: [String: [Station]] = [:]
 
@@ -327,8 +403,11 @@ actor NetworkClient: CitiesProviding,
         let cities = citiesByName.values.sorted {
             $0.name.localizedStandardCompare($1.name) == .orderedAscending
         }
-        cachedCities = cities
-        cachedStationsByCityKey = stationsByCityKey
+
+        return StationDirectory(
+            cities: cities,
+            stationsByCityKey: stationsByCityKey
+        )
     }
 
     private static func stations(
