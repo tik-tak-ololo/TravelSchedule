@@ -26,10 +26,15 @@ protocol CarrierProviding: Sendable {
     func getCarrierInfo(code: String) async throws -> Carrier
 }
 
+protocol CopyrightProviding: Sendable {
+    func getCopyright() async throws -> CopyrightResponse
+}
+
 actor NetworkClient: CitiesProviding,
                      StationsProviding,
                      ScheduleProviding,
-                     CarrierProviding {
+                     CarrierProviding,
+                     CopyrightProviding {
 
     static let shared: NetworkClient = {
         do {

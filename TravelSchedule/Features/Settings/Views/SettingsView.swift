@@ -7,11 +7,21 @@
 
 import SwiftUI
 
+@MainActor
 struct SettingsView: View {
 
     @AppStorage(AppStorageKey.isDarkTheme) private var isDarkTheme = false
+    @State private var viewModel: SettingsViewModel
 
-    private let viewModel = SettingsViewModel()
+    init(
+        copyrightProvider: any CopyrightProviding = NetworkClient.shared
+    ) {
+        _viewModel = State(
+            initialValue: SettingsViewModel(
+                copyrightProvider: copyrightProvider
+            )
+        )
+    }
 
     var body: some View {
         NavigationStack {
@@ -32,6 +42,9 @@ struct SettingsView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 20)
             .background(Color.backgroundColorIOS)
+            .task {
+                await viewModel.loadCopyright()
+            }
         }
     }
 
@@ -68,7 +81,33 @@ struct SettingsView: View {
 
     private var footer: some View {
         VStack(spacing: 16) {
-            Text(viewModel.apiDescription)
+            if let copyrightText = viewModel.copyrightText {
+                Text(copyrightText)
+            }
+
+            if let copyrightLogoURL = viewModel.copyrightLogoURL, false {
+                // отключил потому что отсутствует в дизайн проекте, возможно в будущем потребуется вывод логотипа
+                AsyncImage(url: copyrightLogoURL) { phase in
+                    if let image = phase.image {
+                        image
+                            .resizable()
+                            .scaledToFit()
+                    } else if phase.error == nil {
+                        ProgressView()
+                    }
+                }
+                .frame(height: 32)
+            }
+
+            if let copyrightURL = viewModel.copyrightURL, false {
+                // отключил потому что отсутствует в дизайн проекте, возможно в будущем потребуется вывод ссылки
+                Link(
+                    copyrightURL.absoluteString,
+                    destination: copyrightURL
+                )
+                .foregroundStyle(.travelBlue)
+            }
+
             Text(viewModel.versionDescription)
         }
         .font(.system(size: 12))
