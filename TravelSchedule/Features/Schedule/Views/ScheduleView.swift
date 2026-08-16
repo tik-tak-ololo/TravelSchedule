@@ -13,7 +13,7 @@ struct ScheduleView: View {
     @State private var viewModel: ScheduleViewModel
 
     @State private var isFilterPresented = false
-    @State private var selectedItem: ScheduleItem?
+    @State private var selectedCarrier: Carrier?
 
     init(
         departure: RoutePoint,
@@ -49,8 +49,8 @@ struct ScheduleView: View {
                 viewModel.applyFilter(filter)
             }
         }
-        .navigationDestination(item: $selectedItem) { item in
-            CarrierDetailsView(carrier: item.carrier)
+        .navigationDestination(item: $selectedCarrier) { carrier in
+            CarrierDetailsView(carrier: carrier)
         }
         .task {
             await viewModel.loadSchedule()
@@ -93,12 +93,16 @@ struct ScheduleView: View {
 
     private var scheduleCards: some View {
         ForEach(viewModel.filteredScheduleItems) { item in
-            Button {
-                selectedItem = item
-            } label: {
+            if let carrier = item.primaryCarrier {
+                Button {
+                    selectedCarrier = carrier
+                } label: {
+                    ScheduleCardView(item: item)
+                }
+                .buttonStyle(.plain)
+            } else {
                 ScheduleCardView(item: item)
             }
-            .buttonStyle(.plain)
         }
     }
 

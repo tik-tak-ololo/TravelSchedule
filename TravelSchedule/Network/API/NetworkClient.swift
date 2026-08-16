@@ -49,6 +49,7 @@ actor NetworkClient: CitiesProviding,
     private let allStationsService: any AllStationsServiceProtocol
     private var cachedCities: [City]?
     private var cachedStationsByCityKey: [String: [Station]]?
+    private var cachedCarriersByCode: [String: Carrier] = [:]
 
     init(apiKey: String = APIConfiguration.apiKey) throws {
         let client = Client(
@@ -121,7 +122,11 @@ actor NetworkClient: CitiesProviding,
                     transfers: true
                 )
 
-                return (response.segments ?? []).compactMap(Self.scheduleItem)
+                let scheduleItems = (response.segments ?? []).compactMap(
+                    Self.scheduleItem
+                )
+
+                return await enrichedWithPrimaryCarriers(scheduleItems)
             } catch let error as SegmentsServiceError
                 where error.statusCode == 404 {
                 lastNotFoundError = error
@@ -152,10 +157,13 @@ actor NetworkClient: CitiesProviding,
     }
 
     func getCarrierInfo(code: String) async throws -> Carrier {
+        if let cachedCarrier = cachedCarriersByCode[code] {
+            return cachedCarrier
+        }
+
         let response = try await carrierService.getCarrierInfo(code: code)
         let apiCarrier = response.carrier
-
-        return Carrier(
+        let carrier = Carrier(
             code: apiCarrier.code.map(String.init) ?? code,
             title: Self.nonempty(apiCarrier.title) ?? "",
             logoURL: Self.url(from: apiCarrier.logo),
@@ -163,6 +171,10 @@ actor NetworkClient: CitiesProviding,
             email: Self.nonempty(apiCarrier.email),
             phone: Self.nonempty(apiCarrier.phone)
         )
+
+        cachedCarriersByCode[code] = carrier
+
+        return carrier
     }
 
     func getAllStations() async throws -> AllStationsResponse {
@@ -192,6 +204,81 @@ actor NetworkClient: CitiesProviding,
         }
 
         return cachedStationsByCityKey?[Self.nameKey(city.name)] ?? []
+    }
+
+    private func enrichedWithPrimaryCarriers(
+        _ scheduleItems: [ScheduleItem]
+    ) async -> [ScheduleItem] {
+        let codesToLoad = scheduleItems.reduce(into: Set<String>()) {
+            result, item in
+            guard
+                let carrier = item.primaryCarrier,
+                carrier.logoURL == nil,
+                let code = Self.nonempty(carrier.code)
+            else {
+                return
+            }
+
+            result.insert(code)
+        }
+
+        guard !codesToLoad.isEmpty else {
+            return scheduleItems
+        }
+
+        let loadedCarriers = await withTaskGroup(
+            of: (String, Carrier?).self,
+            returning: [String: Carrier].self
+        ) { group in
+            for code in codesToLoad {
+                group.addTask {
+                    let carrier = try? await self.getCarrierInfo(code: code)
+                    return (code, carrier)
+                }
+            }
+
+            var result: [String: Carrier] = [:]
+
+            for await (code, carrier) in group {
+                if let carrier {
+                    result[code] = carrier
+                }
+            }
+
+            return result
+        }
+
+        return scheduleItems.map { item in
+            guard
+                let currentCarrier = item.primaryCarrier,
+                let code = Self.nonempty(currentCarrier.code),
+                let loadedCarrier = loadedCarriers[code]
+            else {
+                return item
+            }
+
+            return item.replacingPrimaryCarrier(
+                with: Self.mergedCarrier(
+                    current: currentCarrier,
+                    loaded: loadedCarrier
+                )
+            )
+        }
+    }
+
+    private static func mergedCarrier(
+        current: Carrier,
+        loaded: Carrier
+    ) -> Carrier {
+        Carrier(
+            id: current.id,
+            code: loaded.code ?? current.code,
+            title: nonempty(loaded.title) ?? current.title,
+            logoURL: loaded.logoURL ?? current.logoURL,
+            website: loaded.website ?? current.website,
+            email: loaded.email ?? current.email,
+            phone: loaded.phone ?? current.phone
+        )
     }
 
     private func loadStationDirectory() async throws {
@@ -286,23 +373,186 @@ actor NetworkClient: CitiesProviding,
             return nil
         }
 
-        let apiCarrier = segment.thread?.carrier
-        let carrier = Carrier(
+        let legs = scheduleLegs(
+            from: segment,
+            departureDate: departure,
+            arrivalDate: arrival
+        )
+        let transfers = scheduleTransfers(from: segment)
+
+        return ScheduleItem(
+            departureDate: departure,
+            arrivalDate: arrival,
+            legs: legs,
+            transfers: transfers,
+            transferDescription: transferDescription(
+                hasTransfers: segment.has_transfers == true,
+                transfers: transfers
+            )
+        )
+    }
+
+    private static func scheduleLegs(
+        from segment: Components.Schemas.Segment,
+        departureDate: Date,
+        arrivalDate: Date
+    ) -> [ScheduleLeg] {
+        let details = segment.details ?? []
+        let legIndices = details.indices.filter {
+            details[$0].is_transfer != true
+        }
+        let detailLegs = legIndices.compactMap { index in
+            let isFirstLeg = index == legIndices.first
+            let isLastLeg = index == legIndices.last
+            let previousDetail = index > details.startIndex
+                ? details[details.index(before: index)]
+                : nil
+            let nextIndex = details.index(after: index)
+            let nextDetail = nextIndex < details.endIndex
+                ? details[nextIndex]
+                : nil
+
+            return scheduleLeg(
+                from: details[index],
+                departurePoint: nonempty(
+                    isFirstLeg
+                        ? segment.departure_from?.title
+                        : previousDetail?.transfer_to?.title
+                ),
+                arrivalPoint: nonempty(
+                    isLastLeg
+                        ? segment.arrival_to?.title
+                        : nextDetail?.transfer_from?.title
+                )
+            )
+        }
+
+        if !detailLegs.isEmpty {
+            return detailLegs
+        }
+
+        guard let thread = segment.thread else {
+            return []
+        }
+
+        return [
+            ScheduleLeg(
+                carrier: carrier(from: thread.carrier),
+                departureDate: departureDate,
+                arrivalDate: arrivalDate,
+                departurePoint: nonempty(
+                    segment.from?.title ?? segment.departure_from?.title
+                ),
+                arrivalPoint: nonempty(
+                    segment.to?.title ?? segment.arrival_to?.title
+                ),
+                threadUID: nonempty(thread.uid),
+                number: nonempty(thread.number),
+                routeTitle: nonempty(thread.title),
+                transportType: nonempty(thread.transport_type)
+            )
+        ]
+    }
+
+    private static func scheduleLeg(
+        from detail: Components.Schemas.SegmentDetail,
+        departurePoint: String?,
+        arrivalPoint: String?
+    ) -> ScheduleLeg? {
+        guard
+            detail.is_transfer != true,
+            let departure = date(from: detail.departure),
+            let arrival = date(from: detail.arrival),
+            arrival >= departure,
+            let thread = detail.thread
+        else {
+            return nil
+        }
+
+        return ScheduleLeg(
+            carrier: carrier(from: thread.carrier),
+            departureDate: departure,
+            arrivalDate: arrival,
+            departurePoint: departurePoint
+                ?? nonempty(detail.from?.title),
+            arrivalPoint: arrivalPoint
+                ?? nonempty(detail.to?.title),
+            threadUID: nonempty(thread.uid),
+            number: nonempty(thread.number),
+            routeTitle: nonempty(thread.title),
+            transportType: nonempty(thread.transport_type)
+        )
+    }
+
+    private static func scheduleTransfers(
+        from segment: Components.Schemas.Segment
+    ) -> [ScheduleTransfer] {
+        let detailTransfers = (segment.details ?? []).compactMap {
+            detail -> ScheduleTransfer? in
+            guard detail.is_transfer == true else {
+                return nil
+            }
+
+            let point = detail.transfer_point
+            guard let title = nonempty(point?.title) else {
+                return nil
+            }
+
+            return ScheduleTransfer(
+                pointCode: nonempty(point?.code),
+                pointTitle: title,
+                duration: detail.duration,
+                fromStation: nonempty(detail.transfer_from?.title),
+                toStation: nonempty(detail.transfer_to?.title)
+            )
+        }
+
+        if !detailTransfers.isEmpty {
+            return detailTransfers
+        }
+
+        return (segment.transfers ?? []).compactMap { point in
+            guard let title = nonempty(point.title) else {
+                return nil
+            }
+
+            return ScheduleTransfer(
+                pointCode: nonempty(point.code),
+                pointTitle: title
+            )
+        }
+    }
+
+    private static func transferDescription(
+        hasTransfers: Bool,
+        transfers: [ScheduleTransfer]
+    ) -> String? {
+        guard hasTransfers else {
+            return nil
+        }
+
+        let titles = transfers.map(\.pointTitle)
+
+        switch titles.count {
+        case 0:
+            return "С пересадками"
+        case 1:
+            return "Пересадка: \(titles[0])"
+        default:
+            return "Пересадки: \(titles.joined(separator: ", "))"
+        }
+    }
+
+    private static func carrier(
+        from apiCarrier: Components.Schemas.Carrier?
+    ) -> Carrier {
+        Carrier(
             code: apiCarrier?.code.map(String.init),
             title: nonempty(apiCarrier?.title) ?? "Перевозчик не указан",
             logoURL: url(from: apiCarrier?.logo),
             website: url(from: apiCarrier?.url),
             email: nonempty(apiCarrier?.email),
             phone: nonempty(apiCarrier?.phone)
-        )
-
-        return ScheduleItem(
-            carrier: carrier,
-            departureDate: departure,
-            arrivalDate: arrival,
-            transferDescription: segment.has_transfers == true
-                ? "С пересадками"
-                : nil
         )
     }
 

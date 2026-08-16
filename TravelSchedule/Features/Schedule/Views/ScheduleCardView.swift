@@ -44,9 +44,10 @@ struct ScheduleCardView: View {
             carrierLogo
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(item.carrier.title)
+                Text(item.carrierTitle)
                     .font(.system(size: 17))
                     .foregroundStyle(.schedulePrimaryText)
+                    .lineLimit(1)
 
                 if let transferDescription = item.transferDescription {
                     Text(transferDescription)
@@ -69,7 +70,7 @@ struct ScheduleCardView: View {
         ZStack {
             Color.white
 
-            if let logoURL = item.carrier.logoURL {
+            if let logoURL = item.primaryCarrier?.logoURL {
                 AsyncImage(url: logoURL) { phase in
                     if let image = phase.image {
                         image
