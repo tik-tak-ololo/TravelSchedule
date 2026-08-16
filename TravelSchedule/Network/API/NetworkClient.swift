@@ -15,7 +15,14 @@ protocol StationsProviding: Sendable {
     func getStations(for city: City) async throws -> [Station]
 }
 
-actor NetworkClient: CitiesProviding, StationsProviding {
+protocol ScheduleProviding: Sendable {
+    func getSchedule(
+        from departure: RoutePoint,
+        to destination: RoutePoint
+    ) async throws -> [ScheduleItem]
+}
+
+actor NetworkClient: CitiesProviding, StationsProviding, ScheduleProviding {
 
     static let shared: NetworkClient = {
         do {
@@ -73,12 +80,48 @@ actor NetworkClient: CitiesProviding, StationsProviding {
 
     func getScheduleBetweenStations(
         from: String,
-        to: String
+        to: String,
+        date: String? = nil,
+        resultTimezone: String? = nil,
+        transfers: Bool? = nil
     ) async throws -> SegmentsResponse {
         try await segmentsService.getScheduleBetweenStations(
             from: from,
-            to: to
+            to: to,
+            date: date,
+            resultTimezone: resultTimezone,
+            transfers: transfers
         )
+    }
+
+    func getSchedule(
+        from departure: RoutePoint,
+        to destination: RoutePoint
+    ) async throws -> [ScheduleItem] {
+        let codePairs = try Self.scheduleCodePairs(
+            departure: departure,
+            destination: destination
+        )
+        var lastNotFoundError: SegmentsServiceError?
+
+        for codePair in codePairs {
+            do {
+                let response = try await getScheduleBetweenStations(
+                    from: codePair.from,
+                    to: codePair.to,
+                    date: Self.apiDateFormatter.string(from: Date()),
+                    resultTimezone: TimeZone.current.identifier,
+                    transfers: true
+                )
+
+                return (response.segments ?? []).compactMap(Self.scheduleItem)
+            } catch let error as SegmentsServiceError
+                where error.statusCode == 404 {
+                lastNotFoundError = error
+            }
+        }
+
+        throw lastNotFoundError ?? ScheduleProviderError.missingStationCode
     }
 
     func getStationSchedule(station: String) async throws -> ScheduleResponse {
@@ -215,6 +258,140 @@ actor NetworkClient: CitiesProviding, StationsProviding {
         }
     }
 
+    private static func scheduleItem(
+        from segment: Components.Schemas.Segment
+    ) -> ScheduleItem? {
+        guard
+            let departure = date(from: segment.departure),
+            let arrival = date(from: segment.arrival),
+            arrival >= departure
+        else {
+            return nil
+        }
+
+        let apiCarrier = segment.thread?.carrier
+        let carrier = Carrier(
+            title: nonempty(apiCarrier?.title) ?? "Перевозчик не указан",
+            logoURL: url(from: apiCarrier?.logo),
+            website: url(from: apiCarrier?.url),
+            email: nonempty(apiCarrier?.email),
+            phone: nonempty(apiCarrier?.phone)
+        )
+
+        return ScheduleItem(
+            carrier: carrier,
+            departureDate: departure,
+            arrivalDate: arrival,
+            transferDescription: segment.has_transfers == true
+                ? "С пересадками"
+                : nil
+        )
+    }
+
+    private static func scheduleCodePairs(
+        departure: RoutePoint,
+        destination: RoutePoint
+    ) throws -> [(from: String, to: String)] {
+        guard
+            let departureStationCode = code(departure.station.code),
+            let destinationStationCode = code(destination.station.code)
+        else {
+            throw ScheduleProviderError.missingStationCode
+        }
+
+        let departureCodes = uniqueCodes([
+            departureStationCode,
+            code(departure.city.code)
+        ])
+        let destinationCodes = uniqueCodes([
+            destinationStationCode,
+            code(destination.city.code)
+        ])
+
+        return departureCodes.flatMap { departureCode in
+            destinationCodes.map { destinationCode in
+                (from: departureCode, to: destinationCode)
+            }
+        }
+    }
+
+    private static func uniqueCodes(_ codes: [String?]) -> [String] {
+        codes.compactMap { $0 }.reduce(into: []) { result, code in
+            if !result.contains(code) {
+                result.append(code)
+            }
+        }
+    }
+
+    private static func code(_ value: String?) -> String? {
+        nonempty(value)
+    }
+
+    private static func date(from value: String?) -> Date? {
+        guard let value = nonempty(value) else {
+            return nil
+        }
+
+        let normalizedValue = value.replacingOccurrences(
+            of: " ",
+            with: "T"
+        )
+        let isoFormatter = ISO8601DateFormatter()
+
+        isoFormatter.formatOptions = [
+            .withInternetDateTime,
+            .withFractionalSeconds
+        ]
+        if let date = isoFormatter.date(from: normalizedValue) {
+            return date
+        }
+
+        isoFormatter.formatOptions = [.withInternetDateTime]
+        if let date = isoFormatter.date(from: normalizedValue) {
+            return date
+        }
+
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
+
+        return formatter.date(from: normalizedValue)
+    }
+
+    private static func url(from value: String?) -> URL? {
+        guard let value = nonempty(value) else {
+            return nil
+        }
+
+        if value.hasPrefix("//") {
+            return URL(string: "https:\(value)")
+        }
+
+        return URL(string: value)
+    }
+
+    private static func nonempty(_ value: String?) -> String? {
+        guard
+            let value = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+            !value.isEmpty
+        else {
+            return nil
+        }
+
+        return value
+    }
+
+    private static let apiDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.timeZone = .current
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
+    }()
+
     private static func codeKey(_ code: String) -> String {
         "code:\(code)"
     }
@@ -229,4 +406,8 @@ actor NetworkClient: CitiesProviding, StationsProviding {
             locale: Locale(identifier: "ru_RU")
         )
     }
+}
+
+private enum ScheduleProviderError: Error, Sendable {
+    case missingStationCode
 }

@@ -36,15 +36,39 @@ struct CarrierDetailsView: View {
     }
 
     private var logo: some View {
-        Image(carrier.logoAssetName)
-            .resizable()
-            .scaledToFit()
-            .padding(.horizontal, 72)
-            .padding(.vertical, 16)
-            .frame(maxWidth: .infinity)
-            .frame(height: 104)
-            .background(.white)
-            .clipShape(RoundedRectangle(cornerRadius: 24))
+        ZStack {
+            Color.white
+
+            logoContent
+                .padding(.horizontal, 72)
+                .padding(.vertical, 16)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 104)
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+    }
+
+    @ViewBuilder
+    private var logoContent: some View {
+        if let logoURL = carrier.logoURL {
+            AsyncImage(url: logoURL) { phase in
+                if let image = phase.image {
+                    image
+                        .resizable()
+                        .scaledToFit()
+                } else {
+                    fallbackLogo
+                }
+            }
+        } else {
+            fallbackLogo
+        }
+    }
+
+    private var fallbackLogo: some View {
+        Image(systemName: "tram.fill")
+            .font(.system(size: 36))
+            .foregroundStyle(.red)
     }
 
     private var contactDetails: some View {
@@ -111,8 +135,6 @@ struct CarrierDetailsView: View {
 private extension Carrier {
     static let preview = Carrier(
         title: "ОАО «РЖД»",
-        logoSmallAssetName: "CarrierRZD_Small",
-        logoAssetName: "CarrierRZD",
         website: URL(string: "https://www.rzd.ru"),
         email: "i.lozgkina@yandex.ru",
         phone: "+7 (904) 329-27-71"

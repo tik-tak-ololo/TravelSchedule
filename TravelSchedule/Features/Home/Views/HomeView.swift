@@ -99,12 +99,12 @@ struct HomeView: View {
             }
 
         case let .schedule(
-            departureTitle,
-            destinationTitle
+            departure,
+            destination
         ):
             ScheduleView(
-                departureTitle: departureTitle,
-                destinationTitle: destinationTitle
+                departure: departure,
+                destination: destination
             )
         }
     }
@@ -206,8 +206,8 @@ struct HomeView: View {
 
             navigationPath.append(
                 HomeRoute.schedule(
-                    departureTitle: departure.title,
-                    destinationTitle: destination.title
+                    departure: departure,
+                    destination: destination
                 )
             )
         } label: {

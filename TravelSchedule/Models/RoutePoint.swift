@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct RoutePoint: Hashable {
+struct RoutePoint: Hashable, Sendable {
 
     let city: City
     let station: Station

@@ -66,21 +66,32 @@ struct ScheduleCardView: View {
 
     @ViewBuilder
     private var carrierLogo: some View {
-        if UIImage(named: item.carrier.logoSmallAssetName) != nil {
-            Image(item.carrier.logoSmallAssetName)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 38, height: 38)
-                .background(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-        } else {
-            Image(systemName: "tram.fill")
-                .font(.system(size: 18))
-                .foregroundStyle(.red)
-                .frame(width: 38, height: 38)
-                .background(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+        ZStack {
+            Color.white
+
+            if let logoURL = item.carrier.logoURL {
+                AsyncImage(url: logoURL) { phase in
+                    if let image = phase.image {
+                        image
+                            .resizable()
+                            .scaledToFit()
+                    } else {
+                        fallbackLogo
+                    }
+                }
+                .padding(4)
+            } else {
+                fallbackLogo
+            }
         }
+        .frame(width: 38, height: 38)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var fallbackLogo: some View {
+        Image(systemName: "tram.fill")
+            .font(.system(size: 18))
+            .foregroundStyle(.red)
     }
 
     private var timeline: some View {

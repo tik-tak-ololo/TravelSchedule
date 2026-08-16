@@ -15,8 +15,6 @@ enum ScheduleMockFactory {
     ) -> [ScheduleItem] {
         let rzd = Carrier(
             title: "ОАО «РЖД»",
-            logoSmallAssetName: "CarrierRZD_Small",
-            logoAssetName: "CarrierRZD",
             website: URL(string: "https://www.rzd.ru"),
             email: "i.lozgkina@yandex.ru",
             phone: "+7 (904) 329-27-71"
@@ -24,8 +22,6 @@ enum ScheduleMockFactory {
 
         let fgk = Carrier(
             title: "ФГК",
-            logoSmallAssetName: "CarrierFGK_Small",
-            logoAssetName: "CarrierFGK_Small",
             website: URL(string: "https://railfgk.ru"),
             email: "info@railfgk.ru",
             phone: "+7 (495) 988-20-00"
@@ -33,8 +29,6 @@ enum ScheduleMockFactory {
 
         let uralLogistics = Carrier(
             title: "Урал логистика",
-            logoSmallAssetName: "CarrierUralLogistics_Small",
-            logoAssetName: "CarrierUralLogistics_Small",
             website: URL(string: "https://ural-logistics.ru"),
             email: "info@ural-logistics.ru",
             phone: "+7 (343) 000-00-00"
