@@ -1,101 +1,132 @@
 import SwiftUI
+import WebKit
 
 struct UserAgreementView: View {
 
+    @Environment(\.colorScheme) private var colorScheme
+
+    private let offerURL = URL(
+        string: "https://yandex.ru/legal/practicum_offer/"
+    )
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                heading(Self.title)
-
-                bodyText(Self.introduction)
-                    .padding(.top, 8)
-
-                bodyText("Российская Федерация, город Москва")
-                    .padding(.top, 20)
-
-                ForEach(Self.sections) { section in
-                    heading(section.title)
-                        .padding(.top, 24)
-
-                    bodyText(section.text)
-                        .padding(.top, 8)
-                }
+        Group {
+            if let offerURL {
+                WebView(
+                    url: offerURL,
+                    colorScheme: colorScheme
+                )
             }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 16)
         }
-        .scrollIndicators(.hidden)
         .background(Color.backgroundColorIOS)
         .navigationTitle("Пользовательское соглашение")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
-    }
-
-    private func heading(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 24, weight: .bold))
-            .foregroundStyle(.textPrimaryIOS)
-    }
-
-    private func bodyText(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 17))
-            .foregroundStyle(.textPrimaryIOS)
+        .ignoresSafeArea(edges: .bottom)
     }
 }
 
-private extension UserAgreementView {
+private struct WebView: UIViewRepresentable {
 
-    struct Section: Identifiable {
-        let title: String
-        let text: String
+    let url: URL
+    let colorScheme: ColorScheme
 
-        var id: String { title }
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
     }
 
-    static let title = """
-    Оферта на оказание образовательных услуг дополнительного образования Яндекс.Практикум для физических лиц
-    """
+    func makeUIView(context: Context) -> WKWebView {
+        let webView = WKWebView()
+        let theme = WebsiteTheme(colorScheme: colorScheme)
 
-    static let introduction = """
-    Данный документ является действующим, если расположен по адресу: https://yandex.ru/legal/practicum_offer
-    """
+        context.coordinator.theme = theme
+        configure(webView, for: theme)
+        setCookie(for: theme, in: webView) {
+            webView.load(URLRequest(url: url))
+        }
 
-    static let sections = [
-        Section(
-            title: "1. ТЕРМИНЫ",
-            text: """
-            Понятия, используемые в Оферте, означают следующее:
+        return webView
+    }
 
-            Авторизованные адреса — адреса электронной почты каждой из Сторон. Авторизованным адресом Исполнителя является адрес электронной почты, указанный в разделе 11 Оферты. Авторизованным адресом Студента является адрес электронной почты, указанный Студентом в Личном кабинете.
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        let theme = WebsiteTheme(colorScheme: colorScheme)
 
-            Вводный курс — начальный Курс обучения по представленным на Сервисе Программам обучения в рамках выбранной Студентом Профессии или Курсу, рассчитанный на определенное количество часов самостоятельного обучения.
+        guard context.coordinator.theme != theme else {
+            return
+        }
 
-            Исполнитель — организация, оказывающая образовательные услуги в соответствии с условиями Оферты.
+        context.coordinator.theme = theme
+        configure(webView, for: theme)
+        setCookie(for: theme, in: webView) {
+            webView.reload()
+        }
+    }
 
-            Личный кабинет — закрытая часть Сервиса, доступная Студенту после авторизации.
+    private func configure(
+        _ webView: WKWebView,
+        for theme: WebsiteTheme
+    ) {
+        webView.overrideUserInterfaceStyle = theme.userInterfaceStyle
+        webView.isOpaque = false
+        webView.backgroundColor = .clear
+        webView.scrollView.backgroundColor = .clear
+    }
 
-            Оферта — настоящий документ, содержащий предложение заключить договор об оказании образовательных услуг.
-            """
-        ),
-        Section(
-            title: "2. ПРЕДМЕТ ОФЕРТЫ",
-            text: """
-            Исполнитель обязуется оказать Студенту образовательные услуги, а Студент обязуется соблюдать условия обучения и произвести оплату в порядке и сроки, предусмотренные Офертой.
+    private func setCookie(
+        for theme: WebsiteTheme,
+        in webView: WKWebView,
+        completion: @escaping @MainActor @Sendable () -> Void
+    ) {
+        guard let cookie = theme.cookie else {
+            completion()
+            return
+        }
 
-            Содержание, сроки и формат обучения определяются выбранной программой и информацией, размещенной на Сервисе.
-            """
-        ),
-        Section(
-            title: "3. ПРАВА И ОБЯЗАННОСТИ СТОРОН",
-            text: "Студент обязуется предоставлять достоверные сведения, самостоятельно выполнять задания и соблюдать правила использования Сервиса. Исполнитель предоставляет доступ к учебным материалам и организует образовательный процесс."
-        ),
-        Section(
-            title: "4. ЗАКЛЮЧИТЕЛЬНЫЕ ПОЛОЖЕНИЯ",
-            text: "К отношениям Сторон применяется законодательство Российской Федерации. Продолжая использовать Сервис, Студент подтверждает, что ознакомился с условиями Оферты и принимает их."
-        )
-    ]
+        webView.configuration.websiteDataStore.httpCookieStore.setCookie(
+            cookie
+        ) {
+            Task { @MainActor in
+                completion()
+            }
+        }
+    }
+}
+
+private extension WebView {
+
+    final class Coordinator {
+        var theme: WebsiteTheme?
+    }
+
+    enum WebsiteTheme: String {
+        case light
+        case dark
+
+        init(colorScheme: ColorScheme) {
+            self = colorScheme == .dark ? .dark : .light
+        }
+
+        var userInterfaceStyle: UIUserInterfaceStyle {
+            switch self {
+            case .light:
+                .light
+            case .dark:
+                .dark
+            }
+        }
+
+        var cookie: HTTPCookie? {
+            HTTPCookie(
+                properties: [
+                    .domain: "yandex.ru",
+                    .path: "/",
+                    .name: "documentation_theme",
+                    .value: rawValue,
+                    .secure: "TRUE"
+                ]
+            )
+        }
+    }
 }
 
 #Preview {
