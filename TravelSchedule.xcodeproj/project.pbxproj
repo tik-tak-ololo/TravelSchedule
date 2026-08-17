@@ -12,9 +12,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		CC7E3E542FF6E52B00DD5181 /* TravelSchedule.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TravelSchedule.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CCAE00012FF0000000000001 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
 		CCAE00032FF0000000000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		CC7E3E542FF6E52B00DD5181 /* TravelSchedule.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TravelSchedule.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -47,6 +47,14 @@
 			);
 			sourceTree = "<group>";
 		};
+		CC7E3E552FF6E52B00DD5181 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CC7E3E542FF6E52B00DD5181 /* TravelSchedule.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		CCAE00022FF0000000000002 /* Configurations */ = {
 			isa = PBXGroup;
 			children = (
@@ -54,14 +62,6 @@
 				CCAE00032FF0000000000003 /* Info.plist */,
 			);
 			path = Configurations;
-			sourceTree = "<group>";
-		};
-		CC7E3E552FF6E52B00DD5181 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				CC7E3E542FF6E52B00DD5181 /* TravelSchedule.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

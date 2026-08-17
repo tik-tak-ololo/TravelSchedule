@@ -2,6 +2,8 @@
 //  StoriesView.swift
 //  TravelSchedule
 //
+//  Created by Сергей Хмелёв on 17.08.2026.
+//
 
 import SwiftUI
 

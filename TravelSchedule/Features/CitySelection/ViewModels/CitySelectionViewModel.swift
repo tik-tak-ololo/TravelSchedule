@@ -7,7 +7,6 @@
 
 import Foundation
 import Observation
-import OpenAPIRuntime
 
 @MainActor
 @Observable
@@ -68,37 +67,9 @@ final class CitySelectionViewModel {
             hasLoadedCities = false
         } catch {
             hasLoadedCities = false
-            errorScreenType = Self.errorScreenType(for: error)
+            errorScreenType = NetworkErrorMapper.map(error)
         }
 
         isLoading = false
-    }
-
-    private static func errorScreenType(for error: Error) -> ErrorScreenType {
-        let underlyingError = if let clientError = error as? ClientError {
-            clientError.underlyingError
-        } else {
-            error
-        }
-        let networkError = underlyingError as NSError
-
-        guard networkError.domain == NSURLErrorDomain else {
-            return .serverError
-        }
-
-        let noInternetCodes: Set<URLError.Code> = [
-            .notConnectedToInternet,
-            .networkConnectionLost,
-            .cannotFindHost,
-            .cannotConnectToHost,
-            .dnsLookupFailed,
-            .timedOut
-        ]
-
-        return noInternetCodes.contains(
-            URLError.Code(rawValue: networkError.code)
-        )
-            ? .noInternet
-            : .serverError
     }
 }
