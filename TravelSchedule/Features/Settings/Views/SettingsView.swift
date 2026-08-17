@@ -82,31 +82,33 @@ struct SettingsView: View {
 
     private var footer: some View {
         VStack(spacing: 16) {
-            if let copyrightText = viewModel.copyrightText {
-                Text(copyrightText)
-            }
-
-            if let copyrightLogoURL = viewModel.copyrightLogoURL, false {
-                // отключил потому что отсутствует в дизайн проекте, возможно в будущем потребуется вывод логотипа
-                AsyncImage(url: copyrightLogoURL) { phase in
-                    if let image = phase.image {
-                        image
-                            .resizable()
-                            .scaledToFit()
-                    } else if phase.error == nil {
-                        ProgressView()
+            if viewModel.isCopyrightLoading {
+                ProgressView("Загрузка информации об источнике")
+                    .controlSize(.small)
+            } else {
+                Text(viewModel.copyrightText)
+                if let copyrightLogoURL = viewModel.copyrightLogoURL, false {
+                    // отключил потому что отсутствует в дизайн проекте, возможно в будущем потребуется вывод логотипа
+                    AsyncImage(url: copyrightLogoURL) { phase in
+                        if let image = phase.image {
+                            image
+                                .resizable()
+                                .scaledToFit()
+                        } else if phase.error == nil {
+                            ProgressView()
+                        }
                     }
+                    .frame(height: 32)
                 }
-                .frame(height: 32)
-            }
 
-            if let copyrightURL = viewModel.copyrightURL, false {
-                // отключил потому что отсутствует в дизайн проекте, возможно в будущем потребуется вывод ссылки
-                Link(
-                    copyrightURL.absoluteString,
-                    destination: copyrightURL
-                )
-                .foregroundStyle(.travelBlue)
+                if let copyrightURL = viewModel.copyrightURL, false {
+                    // отключил потому что отсутствует в дизайн проекте, возможно в будущем потребуется вывод ссылки
+                    Link(
+                        copyrightURL.absoluteString,
+                        destination: copyrightURL
+                    )
+                    .foregroundStyle(.travelBlue)
+                }
             }
 
             Text(viewModel.versionDescription)

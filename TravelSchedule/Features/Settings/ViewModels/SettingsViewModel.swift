@@ -9,6 +9,9 @@ enum AppStorageKey {
 @Observable
 final class SettingsViewModel {
 
+    private static let copyrightFallbackText =
+        "Приложение использует API «Яндекс.Расписания»"
+
     var isDarkTheme: Bool {
         didSet {
             userDefaults.set(
@@ -18,9 +21,10 @@ final class SettingsViewModel {
         }
     }
 
-    private(set) var copyrightText: String?
+    private(set) var copyrightText = copyrightFallbackText
     private(set) var copyrightLogoURL: URL?
     private(set) var copyrightURL: URL?
+    private(set) var isCopyrightLoading = false
 
     private let copyrightProvider: any CopyrightProviding
     private let userDefaults: UserDefaults
@@ -51,19 +55,27 @@ final class SettingsViewModel {
         }
 
         hasLoadedCopyright = true
+        isCopyrightLoading = true
 
         do {
             let copyright = try await copyrightProvider.getCopyright().copyright
+            let loadedText = copyright.text.trimmingCharacters(
+                in: .whitespacesAndNewlines
+            )
 
-            copyrightText = copyright.text
+            copyrightText = loadedText.isEmpty
+                ? Self.copyrightFallbackText
+                : loadedText
             copyrightLogoURL = URL(string: copyright.logo_hy)
             copyrightURL = URL(string: copyright.url)
         } catch is CancellationError {
             hasLoadedCopyright = false
         } catch {
-            copyrightText = nil
+            copyrightText = Self.copyrightFallbackText
             copyrightLogoURL = nil
             copyrightURL = nil
         }
+
+        isCopyrightLoading = false
     }
 }
