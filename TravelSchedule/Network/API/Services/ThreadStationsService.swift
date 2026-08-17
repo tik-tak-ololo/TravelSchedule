@@ -10,11 +10,11 @@ import OpenAPIURLSession
 
 typealias ThreadStationsResponse = Components.Schemas.ThreadStationsResponse
 
-protocol ThreadStationsServiceProtocol {
+protocol ThreadStationsServiceProtocol: Sendable {
     func getRouteStations(uid: String) async throws -> ThreadStationsResponse
 }
 
-final class ThreadStationsService: ThreadStationsServiceProtocol {
+final class ThreadStationsService: ThreadStationsServiceProtocol, Sendable {
     private let client: Client
   
     init(client: Client) {

@@ -14,7 +14,7 @@ enum HomeRoute: Hashable {
         type: RoutePointType
     )
     case schedule(
-        departureTitle: String,
-        destinationTitle: String
+        departure: RoutePoint,
+        destination: RoutePoint
     )
 }

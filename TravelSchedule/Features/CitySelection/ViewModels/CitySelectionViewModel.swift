@@ -14,10 +14,20 @@ final class CitySelectionViewModel {
 
     var searchText = ""
 
-    private let cities: [City]
+    private(set) var cities: [City]
+    private(set) var isLoading = false
+    private(set) var errorScreenType: ErrorScreenType?
 
-    init(cities: [City] = City.mockCities) {
+    private let citiesProvider: any CitiesProviding
+    private var hasLoadedCities: Bool
+
+    init(
+        cities: [City] = [],
+        citiesProvider: any CitiesProviding = NetworkClient.shared
+    ) {
         self.cities = cities
+        self.citiesProvider = citiesProvider
+        hasLoadedCities = !cities.isEmpty
     }
 
     var filteredCities: [City] {
@@ -40,5 +50,26 @@ final class CitySelectionViewModel {
 
     func clearSearch() {
         searchText = ""
+    }
+
+    func loadCities() async {
+        guard !hasLoadedCities else {
+            return
+        }
+
+        hasLoadedCities = true
+        isLoading = true
+        errorScreenType = nil
+
+        do {
+            cities = try await citiesProvider.getCities()
+        } catch is CancellationError {
+            hasLoadedCities = false
+        } catch {
+            hasLoadedCities = false
+            errorScreenType = NetworkErrorMapper.map(error)
+        }
+
+        isLoading = false
     }
 }

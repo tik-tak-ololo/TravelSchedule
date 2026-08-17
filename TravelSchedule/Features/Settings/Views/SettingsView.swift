@@ -7,16 +7,27 @@
 
 import SwiftUI
 
+@MainActor
 struct SettingsView: View {
 
-    @AppStorage(AppStorageKey.isDarkTheme) private var isDarkTheme = false
+    @State private var viewModel: SettingsViewModel
 
-    private let viewModel = SettingsViewModel()
+    init(
+        copyrightProvider: any CopyrightProviding = NetworkClient.shared
+    ) {
+        _viewModel = State(
+            initialValue: SettingsViewModel(
+                copyrightProvider: copyrightProvider
+            )
+        )
+    }
 
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         NavigationStack {
             VStack(spacing: 0) {
-                themeRow
+                themeRow(isDarkTheme: $viewModel.isDarkTheme)
 
                 NavigationLink {
                     UserAgreementView()
@@ -32,10 +43,13 @@ struct SettingsView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 20)
             .background(Color.backgroundColorIOS)
+            .task {
+                await viewModel.loadCopyright()
+            }
         }
     }
 
-    private var themeRow: some View {
+    private func themeRow(isDarkTheme: Binding<Bool>) -> some View {
         HStack(spacing: 16) {
             Text("Темная тема")
                 .font(.system(size: 17))
@@ -43,7 +57,7 @@ struct SettingsView: View {
 
             Spacer()
 
-            Toggle("", isOn: $isDarkTheme)
+            Toggle("", isOn: isDarkTheme)
                 .labelsHidden()
                 .tint(.travelBlue)
         }
@@ -68,7 +82,35 @@ struct SettingsView: View {
 
     private var footer: some View {
         VStack(spacing: 16) {
-            Text(viewModel.apiDescription)
+            if viewModel.isCopyrightLoading {
+                ProgressView("Загрузка информации об источнике")
+                    .controlSize(.small)
+            } else {
+                Text(viewModel.copyrightText)
+                if let copyrightLogoURL = viewModel.copyrightLogoURL, false {
+                    // отключил потому что отсутствует в дизайн проекте, возможно в будущем потребуется вывод логотипа
+                    AsyncImage(url: copyrightLogoURL) { phase in
+                        if let image = phase.image {
+                            image
+                                .resizable()
+                                .scaledToFit()
+                        } else if phase.error == nil {
+                            ProgressView()
+                        }
+                    }
+                    .frame(height: 32)
+                }
+
+                if let copyrightURL = viewModel.copyrightURL, false {
+                    // отключил потому что отсутствует в дизайн проекте, возможно в будущем потребуется вывод ссылки
+                    Link(
+                        copyrightURL.absoluteString,
+                        destination: copyrightURL
+                    )
+                    .foregroundStyle(.travelBlue)
+                }
+            }
+
             Text(viewModel.versionDescription)
         }
         .font(.system(size: 12))

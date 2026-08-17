@@ -56,6 +56,9 @@ struct CitySelectionView: View {
         .onTapGesture {
             isSearchFocused = false
         }
+        .task {
+            await viewModel.loadCities()
+        }
     }
 
     private var navigationBar: some View {
@@ -86,11 +89,24 @@ struct CitySelectionView: View {
 
     @ViewBuilder
     private var content: some View {
-        if viewModel.isCityNotFound {
+        if viewModel.isLoading {
+            loadingView
+        } else if let errorScreenType = viewModel.errorScreenType {
+            ErrorView(
+                viewModel: ErrorViewModel(
+                    errorType: errorScreenType
+                )
+            )
+        } else if viewModel.isCityNotFound {
             cityNotFoundView
         } else {
             cityList
         }
+    }
+
+    private var loadingView: some View {
+        ProgressView()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var cityList: some View {
@@ -133,7 +149,7 @@ struct CitySelectionView: View {
             viewModel: CitySelectionViewModel(
                 cities: [
                     City(name: "Москва"),
-                    City(name: "Санкт Петербург"),
+                    City(name: "Санкт-Петербург"),
                     City(name: "Сочи"),
                     City(name: "Краснодар"),
                     City(name: "Казань"),

@@ -14,22 +14,30 @@ final class ScheduleViewModel {
 
     private(set) var scheduleItems: [ScheduleItem]
     private(set) var filter = ScheduleFilter()
+    private(set) var isLoading = false
+    private(set) var errorScreenType: ErrorScreenType?
 
-    let departureTitle: String
-    let destinationTitle: String
+    private let departure: RoutePoint
+    private let destination: RoutePoint
+    private let scheduleProvider: any ScheduleProviding
+    private var hasLoadedSchedule: Bool
 
     init(
-        departureTitle: String,
-        destinationTitle: String,
-        scheduleItems: [ScheduleItem] = ScheduleMockFactory.makeSchedule()
+        departure: RoutePoint,
+        destination: RoutePoint,
+        scheduleItems: [ScheduleItem] = [],
+        scheduleProvider: any ScheduleProviding = NetworkClient.shared
     ) {
-        self.departureTitle = departureTitle
-        self.destinationTitle = destinationTitle
+        self.departure = departure
+        self.destination = destination
         self.scheduleItems = scheduleItems
+        self.scheduleProvider = scheduleProvider
+        hasLoadedSchedule = !scheduleItems.isEmpty
+        isLoading = scheduleItems.isEmpty
     }
 
     var routeTitle: String {
-        "\(departureTitle) → \(destinationTitle)"
+        "\(departure.title) → \(destination.title)"
     }
 
     var filteredScheduleItems: [ScheduleItem] {
@@ -49,6 +57,30 @@ final class ScheduleViewModel {
         _ filter: ScheduleFilter
     ) {
         self.filter = filter
+    }
+
+    func loadSchedule() async {
+        guard !hasLoadedSchedule else {
+            return
+        }
+
+        hasLoadedSchedule = true
+        isLoading = true
+        errorScreenType = nil
+
+        do {
+            scheduleItems = try await scheduleProvider.getSchedule(
+                from: departure,
+                to: destination
+            )
+        } catch is CancellationError {
+            hasLoadedSchedule = false
+        } catch {
+            hasLoadedSchedule = false
+            errorScreenType = NetworkErrorMapper.map(error)
+        }
+
+        isLoading = false
     }
 
     private func matchesTransfersFilter(

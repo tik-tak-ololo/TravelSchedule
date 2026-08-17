@@ -10,11 +10,11 @@ import OpenAPIURLSession
 
 typealias CopyrightResponse = Components.Schemas.CopyrightResponse
 
-protocol CopyrightServiceProtocol {
+protocol CopyrightServiceProtocol: Sendable {
     func getCopyright() async throws -> CopyrightResponse
 }
 
-final class CopyrightService: CopyrightServiceProtocol {
+final class CopyrightService: CopyrightServiceProtocol, Sendable {
     private let client: Client
   
     init(client: Client) {

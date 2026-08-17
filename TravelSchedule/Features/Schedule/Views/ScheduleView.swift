@@ -13,24 +13,29 @@ struct ScheduleView: View {
     @State private var viewModel: ScheduleViewModel
 
     @State private var isFilterPresented = false
-    @State private var selectedItem: ScheduleItem?
+    @State private var selectedCarrier: Carrier?
 
     init(
-        departureTitle: String,
-        destinationTitle: String
+        departure: RoutePoint,
+        destination: RoutePoint,
+        scheduleItems: [ScheduleItem] = []
     ) {
         _viewModel = State(
             initialValue: ScheduleViewModel(
-                departureTitle: departureTitle,
-                destinationTitle: destinationTitle
+                departure: departure,
+                destination: destination,
+                scheduleItems: scheduleItems
             )
         )
     }
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            scheduleList
-            filterButton
+            content
+
+            if !viewModel.isLoading && viewModel.errorScreenType == nil {
+                filterButton
+            }
         }
         .background(.backgroundColorIOS)
         .navigationTitle("")
@@ -44,8 +49,27 @@ struct ScheduleView: View {
                 viewModel.applyFilter(filter)
             }
         }
-        .navigationDestination(item: $selectedItem) { item in
-            CarrierDetailsView(carrier: item.carrier)
+        .navigationDestination(item: $selectedCarrier) { carrier in
+            CarrierDetailsView(carrier: carrier)
+        }
+        .task {
+            await viewModel.loadSchedule()
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if viewModel.isLoading {
+            ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if let errorScreenType = viewModel.errorScreenType {
+            ErrorView(
+                viewModel: ErrorViewModel(
+                    errorType: errorScreenType
+                )
+            )
+        } else {
+            scheduleList
         }
     }
 
@@ -69,12 +93,16 @@ struct ScheduleView: View {
 
     private var scheduleCards: some View {
         ForEach(viewModel.filteredScheduleItems) { item in
-            Button {
-                selectedItem = item
-            } label: {
+            if let carrier = item.primaryCarrier {
+                Button {
+                    selectedCarrier = carrier
+                } label: {
+                    ScheduleCardView(item: item)
+                }
+                .buttonStyle(.plain)
+            } else {
                 ScheduleCardView(item: item)
             }
-            .buttonStyle(.plain)
         }
     }
 
@@ -128,8 +156,15 @@ struct ScheduleView: View {
 #Preview("Light") {
     NavigationStack {
         ScheduleView(
-            departureTitle: "Москва (Ярославский вокзал)",
-            destinationTitle: "Санкт-Петербург (Балтийский вокзал)"
+            departure: RoutePoint(
+                city: City(name: "Москва"),
+                station: Station(name: "Ярославский вокзал")
+            ),
+            destination: RoutePoint(
+                city: City(name: "Санкт-Петербург"),
+                station: Station(name: "Балтийский вокзал")
+            ),
+            scheduleItems: ScheduleMockFactory.makeSchedule()
         )
     }
     .preferredColorScheme(.light)
@@ -138,8 +173,15 @@ struct ScheduleView: View {
 #Preview("Dark") {
     NavigationStack {
         ScheduleView(
-            departureTitle: "Москва (Ярославский вокзал)",
-            destinationTitle: "Санкт-Петербург (Балтийский вокзал)"
+            departure: RoutePoint(
+                city: City(name: "Москва"),
+                station: Station(name: "Ярославский вокзал")
+            ),
+            destination: RoutePoint(
+                city: City(name: "Санкт-Петербург"),
+                station: Station(name: "Балтийский вокзал")
+            ),
+            scheduleItems: ScheduleMockFactory.makeSchedule()
         )
     }
     .preferredColorScheme(.dark)

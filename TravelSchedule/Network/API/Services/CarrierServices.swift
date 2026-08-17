@@ -10,11 +10,11 @@ import OpenAPIURLSession
 
 typealias CarrierResponse = Components.Schemas.CarrierResponse
 
-protocol CarrierServiceProtocol {
+protocol CarrierServiceProtocol: Sendable {
     func getCarrierInfo(code: String) async throws -> CarrierResponse
 }
 
-final class CarrierService: CarrierServiceProtocol {
+final class CarrierService: CarrierServiceProtocol, Sendable {
     private let client: Client
   
     init(client: Client) {

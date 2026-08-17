@@ -27,6 +27,7 @@ struct StationSelectionView: View {
 
         _viewModel = State(
             initialValue: StationSelectionViewModel(
+                city: city,
                 stations: stations
             )
         )
@@ -42,7 +43,7 @@ struct StationSelectionView: View {
 
         _viewModel = State(
             initialValue: StationSelectionViewModel(
-                stations: Station.mockStations(for: city)
+                city: city
             )
         )
 
@@ -71,6 +72,9 @@ struct StationSelectionView: View {
         .contentShape(Rectangle())
         .onTapGesture {
             isSearchFocused = false
+        }
+        .task {
+            await viewModel.loadStations()
         }
     }
 
@@ -101,11 +105,24 @@ struct StationSelectionView: View {
 
     @ViewBuilder
     private var content: some View {
-        if viewModel.isStationNotFound {
+        if viewModel.isLoading {
+            loadingView
+        } else if let errorScreenType = viewModel.errorScreenType {
+            ErrorView(
+                viewModel: ErrorViewModel(
+                    errorType: errorScreenType
+                )
+            )
+        } else if viewModel.isStationNotFound {
             stationNotFoundView
         } else {
             stationList
         }
+    }
+
+    private var loadingView: some View {
+        ProgressView()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var stationList: some View {

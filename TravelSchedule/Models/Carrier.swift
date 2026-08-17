@@ -7,29 +7,29 @@
 
 import Foundation
 
-struct Carrier: Identifiable, Hashable {
+struct Carrier: Identifiable, Hashable, Sendable {
 
     let id: UUID
+    let code: String?
     let title: String
-    let logoSmallAssetName: String
-    let logoAssetName: String
+    let logoURL: URL?
     let website: URL?
     let email: String?
     let phone: String?
 
     init(
         id: UUID = UUID(),
+        code: String? = nil,
         title: String,
-        logoSmallAssetName: String,
-        logoAssetName: String,
+        logoURL: URL? = nil,
         website: URL? = nil,
         email: String? = nil,
         phone: String? = nil
     ) {
         self.id = id
+        self.code = code
         self.title = title
-        self.logoSmallAssetName = logoSmallAssetName
-        self.logoAssetName = logoAssetName
+        self.logoURL = logoURL
         self.website = website
         self.email = email
         self.phone = phone

@@ -481,6 +481,10 @@ components:
           $ref: '#/components/schemas/Station'
         to:
           $ref: '#/components/schemas/Station'
+        departure_from:
+          $ref: '#/components/schemas/Station'
+        arrival_to:
+          $ref: '#/components/schemas/Station'
         departure:
           type: string
 #          format: date-time
@@ -496,6 +500,86 @@ components:
         duration:
           type: integer
           description: Длительность рейса в секундах
+        has_transfers:
+          type: boolean
+          description: Признак наличия пересадок по маршруту
+        transport_types:
+          type: array
+          description: Типы транспорта в составном маршруте
+          items:
+            type: string
+        transfers:
+          type: array
+          description: Пункты пересадок составного маршрута
+          items:
+            $ref: '#/components/schemas/TransferPoint'
+        details:
+          type: array
+          description: Транспортные участки и ожидания пересадок
+          items:
+            $ref: '#/components/schemas/SegmentDetail'
+    TransferPoint:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Тип пункта пересадки
+        title:
+          type: string
+          description: Полное название пункта пересадки
+        short_title:
+          type: string
+          description: Краткое название пункта пересадки
+        popular_title:
+          type: string
+          description: Общепринятое название пункта пересадки
+        code:
+          type: string
+          description: Код пункта в системе Яндекс Расписаний
+    SegmentDetail:
+      type: object
+      properties:
+        is_transfer:
+          type: boolean
+          description: Признак ожидания между транспортными участками
+        thread:
+          $ref: '#/components/schemas/Thread'
+        stops:
+          type: string
+          description: Остановки на транспортном участке
+        from:
+          $ref: '#/components/schemas/Station'
+        to:
+          $ref: '#/components/schemas/Station'
+        departure_platform:
+          type: string
+        arrival_platform:
+          type: string
+        departure_terminal:
+          type: string
+        arrival_terminal:
+          type: string
+        duration:
+          type: number
+          format: double
+          description: Продолжительность участка или пересадки в секундах
+        departure:
+          type: string
+#          format: date-time
+          description: Время отправления транспортного участка
+        arrival:
+          type: string
+#          format: date-time
+          description: Время прибытия транспортного участка
+        start_date:
+          type: string
+          description: Дата начала рейса транспортного участка
+        transfer_point:
+          $ref: '#/components/schemas/TransferPoint'
+        transfer_from:
+          $ref: '#/components/schemas/Station'
+        transfer_to:
+          $ref: '#/components/schemas/Station'
     Copyright:
       type: object
       required:

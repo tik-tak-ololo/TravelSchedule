@@ -7,17 +7,57 @@
 
 import SwiftUI
 
+@MainActor
 struct CarrierDetailsView: View {
 
-    let carrier: Carrier
+    @State private var viewModel: CarrierDetailsViewModel
+
+    init(
+        carrier: Carrier,
+        carrierProvider: any CarrierProviding = NetworkClient.shared
+    ) {
+        _viewModel = State(
+            initialValue: CarrierDetailsViewModel(
+                carrier: carrier,
+                carrierProvider: carrierProvider
+            )
+        )
+    }
 
     var body: some View {
+        content
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.backgroundColorIOS)
+            .navigationTitle("Информация о перевозчике")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.hidden, for: .tabBar)
+            .task {
+                await viewModel.loadCarrier()
+            }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if viewModel.isLoading {
+            ProgressView()
+        } else if let errorScreenType = viewModel.errorScreenType {
+            ErrorView(
+                viewModel: ErrorViewModel(
+                    errorType: errorScreenType
+                )
+            )
+        } else {
+            carrierDetails
+        }
+    }
+
+    private var carrierDetails: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 logo
                     .padding(.bottom, 16)
 
-                Text(carrier.title)
+                Text(viewModel.carrier.title)
                     .font(.system(size: 24, weight: .bold))
                     .foregroundStyle(.primary)
                     .padding(.bottom, 28)
@@ -29,27 +69,47 @@ struct CarrierDetailsView: View {
             .padding(.top, 16)
         }
         .scrollIndicators(.hidden)
-        .background(Color.backgroundColorIOS)
-        .navigationTitle("Информация о перевозчике")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .tabBar)
     }
 
     private var logo: some View {
-        Image(carrier.logoAssetName)
-            .resizable()
-            .scaledToFit()
-            .padding(.horizontal, 72)
-            .padding(.vertical, 16)
-            .frame(maxWidth: .infinity)
-            .frame(height: 104)
-            .background(.white)
-            .clipShape(RoundedRectangle(cornerRadius: 24))
+        ZStack {
+            Color.white
+
+            logoContent
+                .padding(.horizontal, 72)
+                .padding(.vertical, 16)
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 104)
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+    }
+
+    @ViewBuilder
+    private var logoContent: some View {
+        if let logoURL = viewModel.carrier.logoURL {
+            AsyncImage(url: logoURL) { phase in
+                if let image = phase.image {
+                    image
+                        .resizable()
+                        .scaledToFit()
+                } else {
+                    fallbackLogo
+                }
+            }
+        } else {
+            fallbackLogo
+        }
+    }
+
+    private var fallbackLogo: some View {
+        Image(systemName: "tram.fill")
+            .font(.system(size: 36))
+            .foregroundStyle(.red)
     }
 
     private var contactDetails: some View {
         VStack(alignment: .leading, spacing: 24) {
-            if let email = carrier.email,
+            if let email = viewModel.carrier.email,
                let emailURL = URL(string: "mailto:\(email)") {
                 contactRow(
                     title: "E-mail",
@@ -58,7 +118,7 @@ struct CarrierDetailsView: View {
                 )
             }
 
-            if let website = carrier.website {
+            if let website = viewModel.carrier.website {
                 contactRow(
                     title: "Сайт",
                     value: website.host() ?? website.absoluteString,
@@ -66,8 +126,8 @@ struct CarrierDetailsView: View {
                 )
             }
 
-            if let phone = carrier.phone,
-               let phoneURL = carrier.phoneURL {
+            if let phone = viewModel.carrier.phone,
+               let phoneURL = viewModel.carrier.phoneURL {
                 contactRow(
                     title: "Телефон",
                     value: phone,
@@ -111,8 +171,6 @@ struct CarrierDetailsView: View {
 private extension Carrier {
     static let preview = Carrier(
         title: "ОАО «РЖД»",
-        logoSmallAssetName: "CarrierRZD_Small",
-        logoAssetName: "CarrierRZD",
         website: URL(string: "https://www.rzd.ru"),
         email: "i.lozgkina@yandex.ru",
         phone: "+7 (904) 329-27-71"
