@@ -130,3 +130,6 @@ iOSInjectionProject/
 !*.xcworkspace/contents.xcworkspacedata
 /*.gcno
 **/xcshareddata/WorkspaceSettings.xcsettings
+
+# Local API credentials
+/Configurations/Secrets.xcconfig

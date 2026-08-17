@@ -12,6 +12,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		CCAE00012FF0000000000001 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
+		CCAE00032FF0000000000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		CC7E3E542FF6E52B00DD5181 /* TravelSchedule.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TravelSchedule.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -39,9 +41,19 @@
 		CC7E3E4B2FF6E52B00DD5181 = {
 			isa = PBXGroup;
 			children = (
+				CCAE00022FF0000000000002 /* Configurations */,
 				CC7E3E562FF6E52B00DD5181 /* TravelSchedule */,
 				CC7E3E552FF6E52B00DD5181 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		CCAE00022FF0000000000002 /* Configurations */ = {
+			isa = PBXGroup;
+			children = (
+				CCAE00012FF0000000000001 /* Base.xcconfig */,
+				CCAE00032FF0000000000003 /* Info.plist */,
+			);
+			path = Configurations;
 			sourceTree = "<group>";
 		};
 		CC7E3E552FF6E52B00DD5181 /* Products */ = {
@@ -272,6 +284,7 @@
 		};
 		CC7E3E602FF6E52C00DD5181 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = CCAE00012FF0000000000001 /* Base.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -279,7 +292,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 29XMG2D8GF;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Configurations/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -308,6 +322,7 @@
 		};
 		CC7E3E612FF6E52C00DD5181 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = CCAE00012FF0000000000001 /* Base.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -315,7 +330,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 29XMG2D8GF;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Configurations/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

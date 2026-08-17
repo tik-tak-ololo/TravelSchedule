@@ -3,6 +3,22 @@
 //  TravelSchedule
 //
 
+import Foundation
+
 enum APIConfiguration {
-    static let apiKey = "aa8f79e9-8f33-44fc-a4d8-93c30dfc250e"
+    private static let apiKeyInfoPlistKey = "YANDEX_RASP_API_KEY"
+
+    static let apiKey: String = {
+        guard let apiKey = Bundle.main.object(
+            forInfoDictionaryKey: apiKeyInfoPlistKey
+        ) as? String,
+        !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+        apiKey != "$(YANDEX_RASP_API_KEY)" else {
+            preconditionFailure(
+                "API key is missing. Add it to Configurations/Secrets.xcconfig."
+            )
+        }
+
+        return apiKey
+    }()
 }
