@@ -67,6 +67,7 @@ final class CitySelectionViewModel {
         } catch is CancellationError {
             hasLoadedCities = false
         } catch {
+            hasLoadedCities = false
             errorScreenType = Self.errorScreenType(for: error)
         }
 

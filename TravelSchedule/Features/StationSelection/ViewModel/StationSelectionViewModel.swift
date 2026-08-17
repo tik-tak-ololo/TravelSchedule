@@ -72,6 +72,7 @@ final class StationSelectionViewModel {
         } catch is CancellationError {
             hasLoadedStations = false
         } catch {
+            hasLoadedStations = false
             errorScreenType = Self.errorScreenType(for: error)
         }
 

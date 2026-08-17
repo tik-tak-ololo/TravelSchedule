@@ -77,6 +77,7 @@ final class ScheduleViewModel {
         } catch is CancellationError {
             hasLoadedSchedule = false
         } catch {
+            hasLoadedSchedule = false
             errorScreenType = Self.errorScreenType(for: error)
         }
 
